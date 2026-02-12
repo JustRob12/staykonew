@@ -98,6 +98,8 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
     const [uploading, setUploading] = useState(false)
     const [location, setLocation] = useState<[number, number] | null>(null)
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+    const [address, setAddress] = useState('')
+    const [isAddressLoading, setIsAddressLoading] = useState(false)
 
     // Pre-fill data if property provided and open
     useEffect(() => {
@@ -106,6 +108,7 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
             if (property.longitude && property.latitude) {
                 setLocation([property.longitude, property.latitude])
             }
+            setAddress(property.address || '')
         } else if (open && !property) {
             // Reset if opening in create mode (optional, but good practice if checking user location)
             if ("geolocation" in navigator && !location) {
@@ -126,8 +129,36 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
         if (!open && !property) {
             setImages([])
             setLocation(null)
+            setAddress('')
         }
     }, [open, property])
+
+    // Reverse Geocoding Effect
+    useEffect(() => {
+        if (location) {
+            const fetchAddress = async () => {
+                setIsAddressLoading(true)
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location[1]}&lon=${location[0]}`, {
+                        headers: {
+                            'User-Agent': 'StayKo/1.0'
+                        }
+                    })
+                    const data = await response.json()
+                    if (data.display_name) {
+                        setAddress(data.display_name)
+                    }
+                } catch (error) {
+                    console.error("Error fetching address:", error)
+                } finally {
+                    setIsAddressLoading(false)
+                }
+            }
+            // Debounce slightly to avoid too many requests if dragging map (though we only get click events here)
+            // But map click is instant, so likely fine.
+            fetchAddress()
+        }
+    }, [location])
 
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,11 +257,11 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
                     setLocation(newLocation);
                 },
                 (error) => {
-                    console.error("Error getting location:", error);
+                    // console.error("Error getting location:", error);
                     // Silent fail or just log? User asked for "Reset" which implies simple action.
                     // But if it fails, maybe we just reset to default map center?
                     // Let's reset to default map center if geolocation fails completely
-                    setLocation([-0.1276, 51.5074]); // Default fallback
+                    // setLocation([-0.1276, 51.5074]); // Default fallback
                 }
             );
         } else {
@@ -242,8 +273,9 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm font-semibold rounded-xl">
-                        <Plus className="mr-2 h-4 w-4" /> Add Property
+                    <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm font-semibold rounded-xl px-3 sm:px-4">
+                        <Plus className="h-5 w-5 sm:mr-2 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Add Property</span>
                     </Button>
                 )}
             </DialogTrigger>
@@ -273,9 +305,9 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="property_type" className="text-gray-900 font-medium">Type</Label>
+                            <Label htmlFor="property_type" className="text-black font-medium">Type</Label>
                             <Select name="property_type" required defaultValue={property?.property_type || "Boarding House"}>
-                                <SelectTrigger className="bg-white text-gray-900 border-gray-200 focus:ring-green-500/20 rounded-xl">
+                                <SelectTrigger className="bg-white text-black border-gray-200 focus:ring-green-500/20 rounded-xl">
                                     <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
@@ -287,7 +319,7 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
                             </Select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="price" className="text-gray-900 font-medium">Price (per night)</Label>
+                            <Label htmlFor="price" className="text-black font-medium">Price (per night)</Label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₱</span>
                                 <Input
@@ -306,14 +338,22 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
 
                     <div className="grid gap-2">
                         <Label htmlFor="address" className="text-gray-900 font-medium">Address</Label>
-                        <Input
-                            id="address"
-                            name="address"
-                            defaultValue={property?.address}
-                            placeholder="Full address"
-                            required
-                            className="bg-white text-gray-900 border-gray-200 focus:border-green-500 focus:ring-green-500/20 rounded-xl"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="address"
+                                name="address"
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                                placeholder="Full address"
+                                required
+                                className="bg-white text-gray-900 border-gray-200 focus:border-green-500 focus:ring-green-500/20 rounded-xl pr-10"
+                            />
+                            {isAddressLoading && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Location Picker Map */}

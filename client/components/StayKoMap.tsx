@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Map, MapMarker, MarkerContent, type MapRef } from "@/components/ui/map";
 import { getProperties } from "@/app/dashboard/property-actions";
 import Image from "next/image";
-import { X, Phone, MapPin, Search } from "lucide-react";
+import { X, Phone, MapPin, Search, Menu } from "lucide-react";
+
 
 const styles = {
     default: undefined,
@@ -45,6 +46,8 @@ export function StayKoMap() {
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isMaximized, setIsMaximized] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState("");
@@ -158,117 +161,131 @@ export function StayKoMap() {
             </Map>
 
             {/* Search and Filter Panel */}
-            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 w-full max-w-xs sm:max-w-sm max-h-[calc(100vh-2rem)]">
-                <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-gray-100/50 flex-shrink-0">
-                    <div className="relative mb-3">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by place or title..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
-                        />
-                    </div>
+            <div className={`absolute top-4 left-4 z-10 flex flex-col gap-2 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-full max-w-xs sm:max-w-sm max-h-[calc(100vh-2rem)]' : 'w-auto h-auto'}`}>
 
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
-                        {["All", "Boarding House", "House for rent", "House and lot for sale", "Lot for sale"].map((type) => (
-                            <button
-                                key={type}
-                                onClick={() => setFilterType(type)}
-                                className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterType === type
-                                    ? "bg-green-600 text-white shadow-md shadow-green-200"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                    }`}
-                            >
-                                {type}
-                            </button>
-                        ))}
-                    </div>
+                {/* Toggle Button */}
+                <button
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="bg-white p-2.5 rounded-xl shadow-md border border-gray-100 hover:bg-gray-50 transition-colors self-start focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                    aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+                >
+                    {isSidebarOpen ? <X className="h-5 w-5 text-gray-700" /> : <Menu className="h-5 w-5 text-gray-700" />}
+                </button>
 
-                    <div className="grid grid-cols-2 gap-3 mt-1">
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₱</span>
-                            <input
-                                type="number"
-                                placeholder="Min Price"
-                                value={minPrice}
-                                onChange={(e) => setMinPrice(e.target.value)}
-                                className="w-full pl-7 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500/50"
-                            />
-                        </div>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₱</span>
-                            <input
-                                type="number"
-                                placeholder="Max Price"
-                                value={maxPrice}
-                                onChange={(e) => setMaxPrice(e.target.value)}
-                                className="w-full pl-7 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500/50"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Search Results List (Google Maps Style) */}
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex-col flex min-h-0 transition-all duration-300 ease-in-out">
-
-                    <div className="overflow-y-auto p-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-200">
-                        {filteredProperties.length > 0 ? (
-                            filteredProperties.map(property => (
-                                <div
-                                    key={property.id}
-                                    onClick={() => {
-                                        setSelectedProperty(property);
-                                        mapRef.current?.flyTo({ center: [property.longitude!, property.latitude!], zoom: 16, duration: 1500 });
-                                    }}
-                                    className="flex gap-3 p-2 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors border-b border-gray-50 last:border-0"
-                                >
-                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                        <h4 className="font-bold text-sm text-gray-900 truncate">{property.title}</h4>
-                                        <div className="flex items-center gap-1 mt-0.5">
-
-
-                                            <span className="text-xs text-gray-500 truncate">{property.property_type}</span>
-                                        </div>
-                                        <p className="text-xs text-gray-500 truncate mt-0.5">{property.address}</p>
-                                        <p className="text-xs font-bold text-green-600 mt-1">₱{property.price}</p>
-
-                                        <div className="flex gap-1 mt-1.5">
-                                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${property.status === 'available'
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-red-100 text-red-700'
-                                                }`}>
-                                                {property.status === 'available' ? 'Available' : 'Booked'}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                        {property.property_images?.[0] ? (
-                                            <Image
-                                                src={property.property_images[0].image_url}
-                                                alt={property.title}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full text-gray-300">
-                                                <MapPin className="h-6 w-6" />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="p-8 text-center text-gray-500">
-                                <p className="text-sm font-medium">No results found</p>
-                                <p className="text-xs opacity-70">Try adjusting your filters</p>
+                {isSidebarOpen && (
+                    <>
+                        <div className="bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-gray-100/50 flex-shrink-0 animate-in slide-in-from-left-5 duration-200">
+                            <div className="relative mb-3">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by place or title..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
+                                />
                             </div>
-                        )}
-                    </div>
-                </div>
 
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                                {["All", "Boarding House", "House for rent", "House and lot for sale", "Lot for sale"].map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setFilterType(type)}
+                                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterType === type
+                                            ? "bg-green-600 text-white shadow-md shadow-green-200"
+                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                            }`}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mt-1">
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-black text-xs">₱</span>
+                                    <input
+                                        type="number"
+                                        placeholder="Min Price"
+                                        value={minPrice}
+                                        onChange={(e) => setMinPrice(e.target.value)}
+                                        className="w-full pl-7 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-black text-xs">₱</span>
+                                    <input
+                                        type="number"
+                                        placeholder="Max Price"
+                                        value={maxPrice}
+                                        onChange={(e) => setMaxPrice(e.target.value)}
+                                        className="w-full pl-7 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Search Results List (Google Maps Style) */}
+                        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex-col flex min-h-0 transition-all duration-300 ease-in-out animate-in slide-in-from-left-5 duration-200 delay-75">
+
+                            <div className="overflow-y-auto p-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-200">
+                                {filteredProperties.length > 0 ? (
+                                    filteredProperties.map(property => (
+                                        <div
+                                            key={property.id}
+                                            onClick={() => {
+                                                setSelectedProperty(property);
+                                                mapRef.current?.flyTo({ center: [property.longitude!, property.latitude!], zoom: 16, duration: 1500 });
+                                                // Optional: Close sidebar on mobile when selecting? keeping open for now
+                                            }}
+                                            className="flex gap-3 p-2 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+                                        >
+                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                <h4 className="font-bold text-sm text-gray-900 truncate">{property.title}</h4>
+                                                <div className="flex items-center gap-1 mt-0.5">
+
+
+                                                    <span className="text-xs text-gray-500 truncate">{property.property_type}</span>
+                                                </div>
+                                                <p className="text-xs text-gray-500 truncate mt-0.5">{property.address}</p>
+                                                <p className="text-xs font-bold text-green-600 mt-1">₱{property.price}</p>
+
+                                                <div className="flex gap-1 mt-1.5">
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${property.status === 'available'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                        {property.status === 'available' ? 'Available' : 'Booked'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                                {property.property_images?.[0] ? (
+                                                    <Image
+                                                        src={property.property_images[0].image_url}
+                                                        alt={property.title}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full text-gray-300">
+                                                        <MapPin className="h-6 w-6" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-8 text-center text-gray-500">
+                                        <p className="text-sm font-medium">No results found</p>
+                                        <p className="text-xs opacity-70">Try adjusting your filters</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             <div className="absolute top-4 right-4 z-10 flex gap-2">

@@ -1,5 +1,6 @@
 import Image from 'next/image'
-import { LogOut } from 'lucide-react'
+import { LogOut, Building } from 'lucide-react'
+
 import { AddPropertyModal } from './AddPropertyModal'
 
 interface HeaderProps {
@@ -20,6 +21,14 @@ export default function Header({ user }: HeaderProps) {
                     <div className="flex items-center space-x-4">
                         <AddPropertyModal />
 
+
+                        <div className="h-8 w-px bg-gray-200 mx-2"></div>
+
+                        <a href="/dashboard/my-properties" className="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors p-2 sm:p-0 rounded-full hover:bg-gray-100 sm:hover:bg-transparent">
+                            <span className="hidden sm:inline">My Properties</span>
+                            <Building className="h-5 w-5 sm:hidden" />
+                        </a>
+
                         <div className="h-8 w-px bg-gray-200 mx-2"></div>
 
                         <div className="flex items-center space-x-3">
@@ -37,7 +46,7 @@ export default function Header({ user }: HeaderProps) {
                                     </span>
                                 )}
                             </div>
-                            <span className="font-medium text-gray-700">
+                            <span className="font-medium text-gray-700 hidden sm:block">
                                 {user.full_name}
                             </span>
                         </div>
