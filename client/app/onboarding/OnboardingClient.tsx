@@ -129,7 +129,7 @@ export default function OnboardingClient({ user }: OnboardingProps) {
                     </p>
                 </div>
 
-                <form action={updateProfile} className="mt-8 space-y-6">
+                <form onSubmit={handleSubmit} className="mt-8 space-y-6">
                     {/* Hidden inputs to preserve data from other steps */}
                     {step === 2 && (
                         <>
@@ -255,10 +255,10 @@ export default function OnboardingClient({ user }: OnboardingProps) {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={uploading}
+                                    disabled={uploading || isSubmitting}
                                     className="flex-[2] flex justify-center items-center gap-2 py-4 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Complete Setup <Check className="h-4 w-4" />
+                                    {isSubmitting ? 'Saving...' : 'Complete Setup'} <Check className="h-4 w-4" />
                                 </button>
                             </div>
                         </div>
