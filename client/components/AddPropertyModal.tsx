@@ -27,6 +27,7 @@ import { Plus, X, Upload, Loader2, MapPin, Pencil, RotateCcw, RefreshCw } from '
 
 import Image from 'next/image'
 import { Map, MapMarker, MarkerContent, MapRoute, useMap } from '@/components/ui/map'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 // Define a minimal Property type for editing props
 export type Property = {
@@ -105,6 +106,8 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
     const [routeDuration, setRouteDuration] = useState<string | null>(null);
     const [isRoutingLoading, setIsRoutingLoading] = useState(false);
     const [mapKey, setMapKey] = useState(0);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
 
     // Pre-fill data if property provided and open
     useEffect(() => {
@@ -141,30 +144,41 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
         }
     }, [open, property])
 
-    // // Reverse Geocoding Effect
-    // useEffect(() => {
-    //     if (location) {
-    //         const fetchAddress = async () => {
-    //             setIsAddressLoading(true)
-    //             try {
-    //                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location[1]}&lon=${location[0]}`, {
-    //                     headers: {
-    //                         'User-Agent': 'StayKo/1.0'
-    //                     }
-    //                 })
-    //                 const data = await response.json()
-    //                 if (data.display_name) {
-    //                     setAddress(data.display_name)
-    //                 }
-    //             } catch (error) {
-    //                 console.error("Error fetching address:", error)
-    //             } finally {
-    //                 setIsAddressLoading(false)
-    //             }
-    //         }
-    //         fetchAddress()
-    //     }
-    // }, [location])
+    // Reverse Geocoding Effect
+    useEffect(() => {
+        if (location) {
+            const fetchAddress = async () => {
+                setIsAddressLoading(true)
+                try {
+                    // Using a more reliable geocoding service or handling CORS
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location[1]}&lon=${location[0]}`, {
+                        headers: {
+                            'User-Agent': 'StayKo/1.0'
+                        }
+                    })
+
+                    if (!response.ok) {
+                        throw new Error('Geocoding service unavailable')
+                    }
+
+                    const data = await response.json()
+                    if (data.display_name) {
+                        setAddress(data.display_name)
+                    }
+                } catch (error) {
+                    console.warn("Reverse geocoding failed (CORS or rate limit). Please enter address manually:", error)
+                    // Don't block user - they can enter address manually
+                    // Optionally set a placeholder or default
+                    if (!address) {
+                        setAddress(`Lat: ${location[1].toFixed(4)}, Lon: ${location[0].toFixed(4)}`)
+                    }
+                } finally {
+                    setIsAddressLoading(false)
+                }
+            }
+            fetchAddress()
+        }
+    }, [location])
 
     // Routing Effect for AddPropertyModal
     useEffect(() => {
@@ -247,27 +261,31 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
     }
 
     async function clientAction(formData: FormData) {
-        if (images.length === 0 && !property) { // Allow update without images change if strictly logic allows, but here we sync images state
+        if (images.length === 0 && !property) {
             alert("Please upload at least one image.")
             return
         }
-        // If updating, images might be empty if user removed all? 
-        // Logic in action handles empty list.
 
         if (!location) {
             alert("Please select a location on the map.")
             return
         }
-        formData.append('image_urls', JSON.stringify(images))
 
-        // Append property ID if editing
+        // Show confirmation dialog instead of executing immediately
+        formData.append('image_urls', JSON.stringify(images))
         if (property) {
             formData.append('property_id', property.id)
         }
+        setPendingFormData(formData)
+        setShowConfirmDialog(true)
+    }
+
+    const handleConfirmSubmit = async () => {
+        if (!pendingFormData) return
 
         const action = property ? updateProperty : createProperty;
-        // @ts-ignore - Create/Update signatures match enough for this usage, or fix types
-        const result = await action({}, formData)
+        // @ts-ignore
+        const result = await action({}, pendingFormData)
 
         if (result?.error) {
             alert(result.error)
@@ -278,6 +296,7 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
                 setLocation(null)
             }
         }
+        setPendingFormData(null)
     }
 
     const handleUseCurrentLocation = (e: React.MouseEvent) => {
@@ -562,10 +581,32 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
 
                     <DialogFooter className="mt-2 pt-4 border-t border-gray-100">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="mr-2 hover:bg-gray-100/80 rounded-xl font-medium text-gray-600">Cancel</Button>
-                        <SubmitButton isEditing={!!property} />
+                        <Button
+                            type="submit"
+                            disabled={uploading}
+                            className="bg-green-600 hover:bg-green-700 text-white rounded-xl px-8 font-medium shadow-sm"
+                        >
+                            {property ? 'Save Changes' : 'List Property'}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                open={showConfirmDialog}
+                onOpenChange={setShowConfirmDialog}
+                title={property ? "Confirm Changes" : "List Property"}
+                description={
+                    property
+                        ? "Are you sure you want to save these changes to your property?"
+                        : "Are you sure you want to list this property? It will be visible to all users."
+                }
+                confirmText={property ? "Save Changes" : "List Property"}
+                cancelText="Cancel"
+                onConfirm={handleConfirmSubmit}
+                variant="default"
+            />
         </Dialog>
     )
 }

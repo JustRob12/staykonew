@@ -7,12 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Pencil, Trash2, MapPin, Loader2, Home } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 export function MyPropertiesList() {
     const [properties, setProperties] = useState<Property[]>([])
     const [loading, setLoading] = useState(true)
     const [editingProperty, setEditingProperty] = useState<Property | null>(null)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+    const [propertyToDelete, setPropertyToDelete] = useState<string | null>(null)
     const router = useRouter()
 
     const fetchProperties = async () => {
@@ -28,15 +31,21 @@ export function MyPropertiesList() {
     }, [])
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
-            const result = await deleteProperty(id)
-            if (result.error) {
-                alert(result.error)
-            } else {
-                fetchProperties() // Refresh list
-                router.refresh() // Refresh server components if any
-            }
+        setPropertyToDelete(id)
+        setDeleteConfirmOpen(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!propertyToDelete) return
+
+        const result = await deleteProperty(propertyToDelete)
+        if (result.error) {
+            alert(result.error)
+        } else {
+            fetchProperties()
+            router.refresh()
         }
+        setPropertyToDelete(null)
     }
 
     const handleToggleStatus = async (id: string, currentStatus: string) => {
@@ -141,7 +150,19 @@ export function MyPropertiesList() {
                 open={isEditModalOpen}
                 onOpenChange={setIsEditModalOpen}
                 property={editingProperty || undefined}
-                trigger={<span className="hidden"></span>} // Hidden trigger since we control it manually
+                trigger={<span className="hidden"></span>}
+            />
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                title="Delete Property"
+                description="Are you sure you want to delete this property? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={confirmDelete}
+                variant="danger"
             />
         </div>
     )
