@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   title: "StayKo",
   description: "Seamless stays and modern lifestyle management.",
   icons: {
-    icon: '/StayKoHouse.png',
+    icon: [
+      { url: '/favicon.ico' },
+    ],
   },
 };
 
