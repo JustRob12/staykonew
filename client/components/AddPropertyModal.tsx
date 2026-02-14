@@ -28,6 +28,7 @@ import { Plus, X, Upload, Loader2, MapPin, Pencil, RotateCcw, RefreshCw } from '
 import Image from 'next/image'
 import { Map, MapMarker, MarkerContent, MapRoute, useMap } from '@/components/ui/map'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 
 // Define a minimal Property type for editing props
 export type Property = {
@@ -108,6 +109,7 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
     const [mapKey, setMapKey] = useState(0);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Pre-fill data if property provided and open
     useEffect(() => {
@@ -283,20 +285,25 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
     const handleConfirmSubmit = async () => {
         if (!pendingFormData) return
 
-        const action = property ? updateProperty : createProperty;
-        // @ts-ignore
-        const result = await action({}, pendingFormData)
+        setIsSubmitting(true)
+        try {
+            const action = property ? updateProperty : createProperty;
+            // @ts-ignore
+            const result = await action({}, pendingFormData)
 
-        if (result?.error) {
-            alert(result.error)
-        } else {
-            setOpen(false)
-            if (!property) {
-                setImages([])
-                setLocation(null)
+            if (result?.error) {
+                alert(result.error)
+            } else {
+                setOpen(false)
+                if (!property) {
+                    setImages([])
+                    setLocation(null)
+                }
             }
+        } finally {
+            setPendingFormData(null)
+            setIsSubmitting(false)
         }
-        setPendingFormData(null)
     }
 
     const handleUseCurrentLocation = (e: React.MouseEvent) => {
@@ -607,6 +614,15 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
                 onConfirm={handleConfirmSubmit}
                 variant="default"
             />
+
+            {/* Loading Overlay */}
+            {isSubmitting && (
+                <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
+                    <div className="bg-white rounded-2xl p-8 shadow-xl">
+                        <LoadingSpinner size="lg" text={property ? "Saving changes..." : "Creating property..."} />
+                    </div>
+                </div>
+            )}
         </Dialog>
     )
 }

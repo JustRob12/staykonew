@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { getPublicProfile } from '@/app/dashboard/profile-actions'
 import { getPublicUserProperties } from '@/app/dashboard/property-actions'
 import { Property } from '@/components/StayKoMap'
@@ -7,11 +10,59 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ImageLightbox } from '@/components/ui/image-lightbox'
 
-export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
-    const { id: userId } = await params
-    const profile = await getPublicProfile(userId)
-    const properties = await getPublicUserProperties(userId)
+export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
+    const [userId, setUserId] = useState<string>('')
+    const [profile, setProfile] = useState<any>(null)
+    const [properties, setProperties] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [lightboxOpen, setLightboxOpen] = useState(false)
+    const [lightboxImages, setLightboxImages] = useState<string[]>([])
+    const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+    useEffect(() => {
+        async function fetchData() {
+            const resolvedParams = await params
+            setUserId(resolvedParams.id)
+
+            const [profileData, propertiesData] = await Promise.all([
+                getPublicProfile(resolvedParams.id),
+                getPublicUserProperties(resolvedParams.id)
+            ])
+
+            setProfile(profileData)
+            setProperties(propertiesData || [])
+            setLoading(false)
+        }
+        fetchData()
+    }, [params])
+
+    const openLightbox = (images: string[], index: number) => {
+        setLightboxImages(images)
+        setCurrentImageIndex(index)
+        setLightboxOpen(true)
+    }
+
+    const closeLightbox = () => {
+        setLightboxOpen(false)
+    }
+
+    const nextImage = () => {
+        setCurrentImageIndex((prev) => (prev + 1) % lightboxImages.length)
+    }
+
+    const previousImage = () => {
+        setCurrentImageIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length)
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50/30 flex items-center justify-center">
+                <div className="text-gray-500">Loading...</div>
+            </div>
+        )
+    }
 
     if (!profile) {
         return (
@@ -26,55 +77,69 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         )
     }
 
-    // Reuse property card logic roughly
-    const PropertyCard = ({ property }: { property: any }) => (
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow border-gray-100 group">
-            <div className="relative h-48 w-full bg-gray-100">
-                {property.property_images && property.property_images.length > 0 ? (
-                    <Image
-                        src={property.property_images[0].image_url}
-                        alt={property.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
-                        <MapPin className="h-8 w-8" />
-                    </div>
-                )}
-                <div className="absolute top-3 left-3">
-                    <Badge className={`${property.status === 'available' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
-                        } text-white border-0 shadow-sm`}>
-                        {property.status === 'available' ? 'Available' : 'Booked'}
-                    </Badge>
-                </div>
-            </div>
-            <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg font-bold text-gray-900 line-clamp-1">{property.title}</CardTitle>
-                    <span className="text-green-600 font-bold text-lg whitespace-nowrap">₱{property.price}</span>
-                </div>
-                <div className="flex items-center text-gray-500 text-xs mt-1">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    <span className="truncate">{property.address}</span>
-                </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-2 pb-3">
-                <p className="text-gray-600 text-sm line-clamp-2">{property.description}</p>
-            </CardContent>
-            <CardFooter className="p-4 pt-0 bg-gray-50/50 flex justify-between items-center text-xs text-gray-500 border-t border-gray-100/50">
-                <div className="flex items-center gap-3 w-full mt-3">
-                    <div className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium">
-                        {property.property_type}
-                    </div>
-                    <div className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium">
-                        {property.available_slots} Slots
-                    </div>
-                </div>
-            </CardFooter>
-        </Card>
-    )
+    // Property card with clickable image
+    const PropertyCard = ({ property }: { property: any }) => {
+        const propertyImages = property.property_images?.map((img: any) => img.image_url) || []
 
+        return (
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow border-gray-100 group">
+                <div
+                    className="relative h-48 w-full bg-gray-100 cursor-pointer"
+                    onClick={() => propertyImages.length > 0 && openLightbox(propertyImages, 0)}
+                >
+                    {property.property_images && property.property_images.length > 0 ? (
+                        <>
+                            <Image
+                                src={property.property_images[0].image_url}
+                                alt={property.title}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            {/* Image count badge */}
+                            {property.property_images.length > 1 && (
+                                <div className="absolute bottom-3 right-3 bg-black/70 text-white px-2 py-1 rounded-lg text-xs font-medium">
+                                    1 / {property.property_images.length}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-gray-400">
+                            <MapPin className="h-8 w-8" />
+                        </div>
+                    )}
+                    <div className="absolute top-3 left-3">
+                        <Badge className={`${property.status === 'available' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                            } text-white border-0 shadow-sm`}>
+                            {property.status === 'available' ? 'Available' : 'Booked'}
+                        </Badge>
+                    </div>
+                </div>
+                <CardHeader className="p-4 pb-2">
+                    <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg font-bold text-gray-900 line-clamp-1">{property.title}</CardTitle>
+                        <span className="text-green-600 font-bold text-lg whitespace-nowrap">₱{property.price}</span>
+                    </div>
+                    <div className="flex items-center text-gray-500 text-xs mt-1">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        <span className="truncate">{property.address}</span>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-2 pb-3">
+                    <p className="text-gray-600 text-sm line-clamp-2">{property.description}</p>
+                </CardContent>
+                <CardFooter className="p-4 pt-0 bg-gray-50/50 flex justify-between items-center text-xs text-gray-500 border-t border-gray-100/50">
+                    <div className="flex items-center gap-3 w-full mt-3">
+                        <div className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium">
+                            {property.property_type}
+                        </div>
+                        <div className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md font-medium">
+                            {property.available_slots} Slots
+                        </div>
+                    </div>
+                </CardFooter>
+            </Card>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/30">
@@ -187,6 +252,16 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                     </div>
                 )}
             </div>
+
+            {/* Image Lightbox */}
+            <ImageLightbox
+                images={lightboxImages}
+                currentIndex={currentImageIndex}
+                isOpen={lightboxOpen}
+                onClose={closeLightbox}
+                onNext={nextImage}
+                onPrevious={previousImage}
+            />
         </div>
     )
 }

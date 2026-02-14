@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import NProgress from 'nprogress'
 import Image from 'next/image'
 import { LogOut, Building, User } from 'lucide-react'
 import {
@@ -24,6 +26,12 @@ interface HeaderProps {
 
 export default function Header({ user }: HeaderProps) {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+    const router = useRouter()
+
+    const handleNavigation = (href: string) => {
+        NProgress.start()
+        router.push(href)
+    }
 
     const handleLogout = async () => {
         // Submit the logout form
@@ -90,17 +98,13 @@ export default function Header({ user }: HeaderProps) {
                                 <DropdownMenuContent align="end" className="w-48">
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
-                                        <a href="/dashboard/profile" className="w-full flex items-center gap-2 cursor-pointer">
-                                            <User className="h-4 w-4" />
-                                            <span>Profile</span>
-                                        </a>
+                                    <DropdownMenuItem onClick={() => handleNavigation('/dashboard/profile')}>
+                                        <User className="h-4 w-4 mr-2" />
+                                        <span>Profile</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <a href="/dashboard/my-properties" className="w-full flex items-center gap-2 cursor-pointer">
-                                            <Building className="h-4 w-4" />
-                                            <span>My Properties</span>
-                                        </a>
+                                    <DropdownMenuItem onClick={() => handleNavigation('/dashboard/my-properties')}>
+                                        <Building className="h-4 w-4 mr-2" />
+                                        <span>My Properties</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
