@@ -34,14 +34,37 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
-    // Redirect authenticated users away from login/onboarding pages
-    if (
-        user &&
-        (request.nextUrl.pathname.startsWith('/login') ||
-            request.nextUrl.pathname.startsWith('/onboarding'))
-    ) {
+    // Check if user has completed profile (has username)
+    let hasCompletedProfile = false
+    if (user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .single()
+
+        hasCompletedProfile = !!(profile?.username)
+    }
+
+    // Redirect authenticated users with completed profiles away from login/onboarding
+    if (user && hasCompletedProfile) {
+        if (
+            request.nextUrl.pathname.startsWith('/login') ||
+            request.nextUrl.pathname.startsWith('/onboarding')
+        ) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/dashboard'
+            return NextResponse.redirect(url)
+        }
+    }
+
+    // Redirect authenticated users without completed profiles to onboarding
+    if (user && !hasCompletedProfile && (
+        request.nextUrl.pathname.startsWith('/login') ||
+        request.nextUrl.pathname.startsWith('/dashboard')
+    )) {
         const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
+        url.pathname = '/onboarding'
         return NextResponse.redirect(url)
     }
 
