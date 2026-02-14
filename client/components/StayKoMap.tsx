@@ -98,6 +98,15 @@ export function StayKoMap() {
         }
     }, []);
 
+    // Listen for refresh location event from Header
+    useEffect(() => {
+        const handleRefreshEvent = () => {
+            refreshLocation();
+        };
+        window.addEventListener('refreshLocation', handleRefreshEvent);
+        return () => window.removeEventListener('refreshLocation', handleRefreshEvent);
+    }, []);
+
     // Fetch properties
     useEffect(() => {
         const fetchProperties = async () => {
@@ -439,20 +448,6 @@ export function StayKoMap() {
                     </SelectContent>
                 </Select>
             </div>
-
-            {/* Floating Location Refresh Button */}
-            <button
-                onClick={refreshLocation}
-                disabled={isRefreshingLocation}
-                className="absolute bottom-6 right-6 z-10 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 group"
-                title="Update my location"
-            >
-                {isRefreshingLocation ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                    <Crosshair className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
-                )}
-            </button>
 
             {/* Property Details Modal */}
             {selectedProperty && (

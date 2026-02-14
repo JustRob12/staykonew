@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import NProgress from 'nprogress'
 import Image from 'next/image'
-import { LogOut, Building, User } from 'lucide-react'
+import { LogOut, Building, User, Crosshair, Loader2 } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,11 +26,20 @@ interface HeaderProps {
 
 export default function Header({ user }: HeaderProps) {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+    const [isRefreshingLocation, setIsRefreshingLocation] = useState(false)
     const router = useRouter()
 
     const handleNavigation = (href: string) => {
         NProgress.start()
         router.push(href)
+    }
+
+    const handleRefreshLocation = () => {
+        setIsRefreshingLocation(true)
+        // Dispatch custom event to trigger map refresh
+        window.dispatchEvent(new CustomEvent('refreshLocation'))
+        // Reset loading state after a delay
+        setTimeout(() => setIsRefreshingLocation(false), 2000)
     }
 
     const handleLogout = async () => {
@@ -71,6 +80,21 @@ export default function Header({ user }: HeaderProps) {
                             </div>
                         </div>
                         <div className="flex items-center space-x-4">
+                            {/* Location Refresh Button */}
+                            <button
+                                onClick={handleRefreshLocation}
+                                disabled={isRefreshingLocation}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-green-700 bg-green-50 hover:bg-green-100 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Update my location"
+                            >
+                                {isRefreshingLocation ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Crosshair className="h-4 w-4" />
+                                )}
+                                <span className="hidden sm:inline">Update Location</span>
+                            </button>
+
                             <AddPropertyModal />
 
                             <div className="h-8 w-px bg-gray-200 mx-2"></div>
