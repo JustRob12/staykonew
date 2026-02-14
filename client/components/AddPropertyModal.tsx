@@ -23,10 +23,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Plus, X, Upload, Loader2, MapPin, Pencil, RotateCcw } from 'lucide-react'
+import { Plus, X, Upload, Loader2, MapPin, Pencil, RotateCcw, RefreshCw } from 'lucide-react'
 
 import Image from 'next/image'
-import { Map, MapMarker, MarkerContent, useMap } from '@/components/ui/map'
+import { Map, MapMarker, MarkerContent, MapRoute, useMap } from '@/components/ui/map'
 
 // Define a minimal Property type for editing props
 export type Property = {
@@ -100,6 +100,11 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
     const [address, setAddress] = useState('')
     const [isAddressLoading, setIsAddressLoading] = useState(false)
+    const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
+    const [routeDistance, setRouteDistance] = useState<string | null>(null);
+    const [routeDuration, setRouteDuration] = useState<string | null>(null);
+    const [isRoutingLoading, setIsRoutingLoading] = useState(false);
+    const [mapKey, setMapKey] = useState(0);
 
     // Pre-fill data if property provided and open
     useEffect(() => {
@@ -130,35 +135,72 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
             setImages([])
             setLocation(null)
             setAddress('')
+            setRouteCoordinates([])
+            setRouteDistance(null)
+            setRouteDuration(null)
         }
     }, [open, property])
 
-    // Reverse Geocoding Effect
+    // // Reverse Geocoding Effect
+    // useEffect(() => {
+    //     if (location) {
+    //         const fetchAddress = async () => {
+    //             setIsAddressLoading(true)
+    //             try {
+    //                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location[1]}&lon=${location[0]}`, {
+    //                     headers: {
+    //                         'User-Agent': 'StayKo/1.0'
+    //                     }
+    //                 })
+    //                 const data = await response.json()
+    //                 if (data.display_name) {
+    //                     setAddress(data.display_name)
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Error fetching address:", error)
+    //             } finally {
+    //                 setIsAddressLoading(false)
+    //             }
+    //         }
+    //         fetchAddress()
+    //     }
+    // }, [location])
+
+    // Routing Effect for AddPropertyModal
     useEffect(() => {
-        if (location) {
-            const fetchAddress = async () => {
-                setIsAddressLoading(true)
-                try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location[1]}&lon=${location[0]}`, {
-                        headers: {
-                            'User-Agent': 'StayKo/1.0'
-                        }
-                    })
-                    const data = await response.json()
-                    if (data.display_name) {
-                        setAddress(data.display_name)
-                    }
-                } catch (error) {
-                    console.error("Error fetching address:", error)
-                } finally {
-                    setIsAddressLoading(false)
-                }
+        const fetchRoute = async () => {
+            if (!location || !userLocation) {
+                setRouteCoordinates([]);
+                setRouteDistance(null);
+                return;
             }
-            // Debounce slightly to avoid too many requests if dragging map (though we only get click events here)
-            // But map click is instant, so likely fine.
-            fetchAddress()
-        }
-    }, [location])
+
+            setIsRoutingLoading(true);
+            try {
+                const response = await fetch(
+                    `https://router.project-osrm.org/route/v1/driving/${userLocation[0]},${userLocation[1]};${location[0]},${location[1]}?overview=full&geometries=geojson`
+                );
+                const data = await response.json();
+
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    setRouteCoordinates(route.geometry.coordinates);
+
+                    const distanceInKm = (route.distance / 1000).toFixed(1);
+                    setRouteDistance(`${distanceInKm} km`);
+
+                    const durationInMin = Math.round(route.duration / 60);
+                    setRouteDuration(`${durationInMin} min`);
+                }
+            } catch (error) {
+                console.error("Error fetching route:", error);
+            } finally {
+                setIsRoutingLoading(false);
+            }
+        };
+
+        fetchRoute();
+    }, [location, userLocation]);
 
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,7 +307,7 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
                 }
             );
         } else {
-            setLocation([-0.1276, 51.5074]); // Default fallback
+            setLocation([120.9842, 14.5995]); // Default fallback
         }
     };
 
@@ -287,7 +329,7 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
                     </DialogDescription>
                 </DialogHeader>
 
-                <form action={clientAction} className="grid gap-6 p-6">
+                <form key={open ? 'open' : 'closed'} action={clientAction} className="grid gap-6 p-6">
                     <input type="hidden" name="latitude" value={location ? location[1] : ''} />
                     <input type="hidden" name="longitude" value={location ? location[0] : ''} />
 
@@ -319,7 +361,7 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
                             </Select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="price" className="text-black font-medium">Price (per night)</Label>
+                            <Label htmlFor="price" className="text-black font-medium">Price</Label>
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₱</span>
                                 <Input
@@ -358,32 +400,82 @@ export function AddPropertyModal({ property, open: controlledOpen, onOpenChange:
 
                     {/* Location Picker Map */}
                     <div className="grid gap-2">
-                        <Label className="text-gray-900 font-medium">Location</Label>
+                        <div className="flex justify-between items-center">
+                            <Label className="text-gray-900 font-medium">Location</Label>
+                            {routeDistance && (
+                                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                    {routeDistance} from current location
+                                </span>
+                            )}
+                        </div>
                         <div className="h-64 rounded-xl overflow-hidden border border-gray-200 relative">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white text-gray-700 shadow-md font-medium text-xs backdrop-blur-sm"
-                                onClick={handleUseCurrentLocation}
-                            >
-                                <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-green-600" /> Reset
-                            </Button>
+                            <div className="absolute top-3 right-3 z-10 flex gap-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    className="bg-white/90 hover:bg-white text-gray-700 shadow-md font-medium text-xs backdrop-blur-sm"
+                                    onClick={() => setMapKey(prev => prev + 1)}
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-blue-600" /> Refresh
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    className="bg-white/90 hover:bg-white text-gray-700 shadow-md font-medium text-xs backdrop-blur-sm"
+                                    onClick={handleUseCurrentLocation}
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-green-600" /> Reset
+                                </Button>
+                            </div>
                             <Map
-                                center={location || userLocation || [-0.1276, 51.5074]}
+                                key={mapKey}
+                                center={location || userLocation || [120.9842, 14.5995]}
                                 zoom={13}
                                 theme="light"
                                 styles={{ light: "https://tiles.openfreemap.org/styles/bright", dark: "https://tiles.openfreemap.org/styles/bright" }}
                             >
                                 <MapClickHandler onLocationSelect={setLocation} />
                                 {location && (
-                                    <MapMarker longitude={location[0]} latitude={location[1]}>
-                                        <MarkerContent>
-                                            <div className="relative -mt-8 -ml-4">
-                                                <MapPin className="h-8 w-8 text-red-500 fill-red-500 drop-shadow-md" />
-                                            </div>
-                                        </MarkerContent>
-                                    </MapMarker>
+                                    <>
+                                        <MapMarker longitude={location[0]} latitude={location[1]}>
+                                            <MarkerContent>
+                                                <div className="relative -mt-8 -ml-4">
+                                                    <MapPin className="h-8 w-8 text-red-500 fill-red-500 drop-shadow-md" />
+                                                </div>
+                                            </MarkerContent>
+                                        </MapMarker>
+
+                                        {/* Floating Badge in Picker Modal */}
+                                        {routeDistance && routeDuration && (
+                                            <MapMarker
+                                                longitude={location[0]}
+                                                latitude={location[1]}
+                                                anchor="bottom"
+                                                offset={[0, -40]}
+                                            >
+                                                <MarkerContent>
+                                                    <div className="bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg shadow-lg border border-green-100 flex flex-col items-center animate-in fade-in zoom-in duration-300 pointer-events-none">
+                                                        <span className="text-[10px] font-bold text-green-700 leading-tight">
+                                                            {routeDistance}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-gray-500 leading-tight">
+                                                            {routeDuration}
+                                                        </span>
+                                                    </div>
+                                                </MarkerContent>
+                                            </MapMarker>
+                                        )}
+                                    </>
+                                )}
+                                {routeCoordinates.length > 0 && (
+                                    <MapRoute
+                                        coordinates={routeCoordinates}
+                                        color="#22c55e"
+                                        width={4}
+                                        opacity={0.8}
+                                    />
                                 )}
                             </Map>
                             {!location && (

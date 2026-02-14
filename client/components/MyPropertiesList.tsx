@@ -90,8 +90,8 @@ export function MyPropertiesList() {
                             <button
                                 onClick={() => handleToggleStatus(property.id, property.status || 'available')}
                                 className={`px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm transition-colors ${property.status === 'booked'
-                                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                                        : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                    ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                    : 'bg-green-100 text-green-600 hover:bg-green-200'
                                     }`}
                             >
                                 {property.status === 'booked' ? 'Booked' : 'Available'}
@@ -111,7 +111,7 @@ export function MyPropertiesList() {
                         </div>
 
                         <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-50">
-                            <span className="font-bold text-green-600">₱{property.price}<span className="text-xs text-gray-400 font-normal">/night</span></span>
+                            <span className="font-bold text-green-600">₱{property.price}<span className="text-xs text-gray-400 font-normal"></span></span>
 
                             <div className="flex gap-2">
                                 <Button

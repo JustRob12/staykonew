@@ -105,14 +105,18 @@ export async function getProperties() {
       profiles:user_id (
         full_name,
         phone_number,
-        avatar_url
+        avatar_url,
+        social_media (tiktok, facebook, instagram)
       )
     `)
+        .order('created_at', { ascending: false })
 
     if (error) {
         console.error('Error fetching properties:', error)
         return []
     }
+
+    console.log('Fetched properties with profiles:', JSON.stringify(properties, null, 2))
 
     return properties
 }
@@ -292,4 +296,36 @@ export async function updateProperty(prevState: PropertyState, formData: FormDat
 
     revalidatePath('/dashboard')
     return { message: 'Property updated successfully!' }
+}
+
+export async function getPublicUserProperties(userId: string) {
+    const supabase = await createClient()
+
+    // Basic UUID validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userId || !uuidRegex.test(userId)) {
+        return []; // Invalid ID
+    }
+
+    const { data: properties, error } = await supabase
+        .from('properties')
+        .select(`
+            *,
+            property_images (image_url),
+            profiles:user_id (
+                full_name,
+                avatar_url
+            )
+        `)
+        .eq('user_id', userId)
+        // Optionally filter by status if you only want to show 'available' properties
+        // .eq('status', 'available') 
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching public user properties:', error)
+        return []
+    }
+
+    return properties
 }

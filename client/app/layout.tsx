@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StayKo - Your Premium Stay",
+  title: "StayKo",
   description: "Seamless stays and modern lifestyle management.",
+  icons: {
+    icon: '/StayKoHouse.png',
+  },
 };
 
 export default function RootLayout({

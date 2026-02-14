@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Map, MapMarker, MarkerContent, type MapRef } from "@/components/ui/map";
+import { Map, MapMarker, MarkerContent, MapRoute, type MapRef } from "@/components/ui/map";
 import { getProperties } from "@/app/dashboard/property-actions";
 import Image from "next/image";
 import { X, Phone, MapPin, Search, Menu } from "lucide-react";
+import { PropertyDesc } from "./PropertyDesc";
 
 
 const styles = {
@@ -16,8 +17,9 @@ const styles = {
 type StyleKey = keyof typeof styles;
 
 // Define Property Type based on the query
-type Property = {
+export type Property = {
     id: string;
+    user_id: string;
     title: string;
     description: string | null;
     price: number | null;
@@ -32,8 +34,21 @@ type Property = {
         full_name: string | null;
         phone_number: string | null;
         avatar_url: string | null;
+        social_media?: {
+            tiktok: string | null;
+            facebook: string | null;
+            instagram: string | null;
+        }[];
     } | null;
 };
+
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export function StayKoMap() {
     const mapRef = useRef<MapRef>(null);
@@ -47,6 +62,11 @@ export function StayKoMap() {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isMaximized, setIsMaximized] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
+    const [routeDistance, setRouteDistance] = useState<string | null>(null);
+    const [routeDuration, setRouteDuration] = useState<string | null>(null);
+    const [isRoutingLoading, setIsRoutingLoading] = useState(false);
+    const [routedProperty, setRoutedProperty] = useState<Property | null>(null);
 
 
     // Filter states
@@ -82,12 +102,60 @@ export function StayKoMap() {
         const fetchProperties = async () => {
             const data = await getProperties();
             if (data) {
-                // Cast data to Property type, assuming structure matches
                 setProperties(data as any);
             }
         };
         fetchProperties();
     }, []);
+
+    // Handle routing when property is selected
+    useEffect(() => {
+        const fetchRoute = async () => {
+            if (!selectedProperty || !userLocation || !selectedProperty.latitude || !selectedProperty.longitude) {
+                // We DON'T clear coordinates here to persist the line when modal closes
+                return;
+            }
+
+            // If we already have a route for this property, don't refetch
+            if (routedProperty?.id === selectedProperty.id) return;
+
+            setIsRoutingLoading(true);
+            try {
+                const response = await fetch(
+                    `https://router.project-osrm.org/route/v1/driving/${userLocation[0]},${userLocation[1]};${selectedProperty.longitude},${selectedProperty.latitude}?overview=full&geometries=geojson`
+                );
+                const data = await response.json();
+
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+                    setRouteCoordinates(route.geometry.coordinates);
+
+                    // Convert distance from meters to km
+                    const distanceInKm = (route.distance / 1000).toFixed(1);
+                    setRouteDistance(`${distanceInKm} km`);
+
+                    // Convert duration from seconds to minutes
+                    const durationInMin = Math.round(route.duration / 60);
+                    setRouteDuration(`${durationInMin} min`);
+
+                    setRoutedProperty(selectedProperty);
+                }
+            } catch (error) {
+                console.error("Error fetching route:", error);
+            } finally {
+                setIsRoutingLoading(false);
+            }
+        };
+
+        fetchRoute();
+    }, [selectedProperty, userLocation, routedProperty]);
+
+    const handleClearRoute = () => {
+        setRouteCoordinates([]);
+        setRouteDistance(null);
+        setRouteDuration(null);
+        setRoutedProperty(null);
+    };
 
     useEffect(() => {
         mapRef.current?.easeTo({ pitch: is3D ? 60 : 0, duration: 500 });
@@ -158,6 +226,49 @@ export function StayKoMap() {
                         </MapMarker>
                     )
                 ))}
+
+                {/* Road following route */}
+                {routeCoordinates.length > 0 && (
+                    <>
+                        <MapRoute
+                            coordinates={routeCoordinates}
+                            color="#22c55e" // Green
+                            width={4}
+                            opacity={0.8}
+                        />
+                        {/* Floating Time/Distance Badge at destination */}
+                        {routedProperty && routedProperty.latitude && routedProperty.longitude && (
+                            <MapMarker
+                                longitude={routedProperty.longitude}
+                                latitude={routedProperty.latitude}
+                                anchor="bottom"
+                                offset={[0, -50]} // Move above the pin
+                            >
+                                <MarkerContent>
+                                    <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-green-100 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-green-700 leading-tight">
+                                                {routeDistance}
+                                            </span>
+                                            <span className="text-[10px] font-medium text-gray-500 leading-tight">
+                                                {routeDuration}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleClearRoute();
+                                            }}
+                                            className="ml-1 p-0.5 hover:bg-gray-100 rounded-full transition-colors"
+                                        >
+                                            <X className="h-3 w-3 text-gray-400" />
+                                        </button>
+                                    </div>
+                                </MarkerContent>
+                            </MapMarker>
+                        )}
+                    </>
+                )}
             </Map>
 
             {/* Search and Filter Panel */}
@@ -226,11 +337,12 @@ export function StayKoMap() {
                         </div>
 
                         {/* Search Results List (Google Maps Style) */}
-                        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex-col flex min-h-0 transition-all duration-300 ease-in-out animate-in slide-in-from-left-5 duration-200 delay-75">
-
-                            <div className="overflow-y-auto p-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-200">
+                        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col min-h-0 flex-1 transition-all duration-300 ease-in-out animate-in slide-in-from-left-5 duration-200 delay-75">
+                            <div className="overflow-y-auto p-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-200 flex-1">
                                 {filteredProperties.length > 0 ? (
                                     filteredProperties.map(property => (
+
+
                                         <div
                                             key={property.id}
                                             onClick={() => {
@@ -240,6 +352,20 @@ export function StayKoMap() {
                                             }}
                                             className="flex gap-3 p-2 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors border-b border-gray-50 last:border-0"
                                         >
+                                            <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
+                                                {property.property_images?.[0] ? (
+                                                    <Image
+                                                        src={property.property_images[0].image_url}
+                                                        alt={property.title}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full text-gray-300">
+                                                        <MapPin className="h-6 w-6" />
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                 <h4 className="font-bold text-sm text-gray-900 truncate">{property.title}</h4>
                                                 <div className="flex items-center gap-1 mt-0.5">
@@ -260,20 +386,7 @@ export function StayKoMap() {
                                                 </div>
                                             </div>
 
-                                            <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                                                {property.property_images?.[0] ? (
-                                                    <Image
-                                                        src={property.property_images[0].image_url}
-                                                        alt={property.title}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="flex items-center justify-center h-full text-gray-300">
-                                                        <MapPin className="h-6 w-6" />
-                                                    </div>
-                                                )}
-                                            </div>
+
                                         </div>
                                     ))
                                 ) : (
@@ -288,203 +401,30 @@ export function StayKoMap() {
                 )}
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2">
-                <select
-                    value={style}
-                    onChange={(e) => setStyle(e.target.value as StyleKey)}
-                    className="bg-white/90 backdrop-blur-sm text-gray-900 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
-                >
-                    <option value="default">Default Map</option>
-                    <option value="openstreetmap">OpenStreetMap</option>
-                    <option value="openstreetmap3d">3D Map</option>
-                </select>
+            <div className="absolute top-4 right-4 z-10">
+                <Select value={style} onValueChange={(value) => setStyle(value as StyleKey)}>
+                    <SelectTrigger className="w-40 bg-white/90 backdrop-blur-sm text-gray-900 border-gray-200 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all">
+                        <SelectValue placeholder="Map Style" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" align="end" className="bg-white/95 backdrop-blur-md border-gray-100 rounded-xl shadow-xl">
+                        <SelectItem value="default" className="text-xs font-medium focus:bg-green-50">Default Map</SelectItem>
+                        <SelectItem value="openstreetmap" className="text-xs font-medium focus:bg-green-50">OpenStreetMap</SelectItem>
+                        <SelectItem value="openstreetmap3d" className="text-xs font-medium focus:bg-green-50">3D Map</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             {/* Property Details Modal */}
             {selectedProperty && (
-                <div
-                    className="absolute z-20 
-                        bottom-0 left-0 right-0 p-4 sm:p-0
-                        sm:top-4 sm:right-4 sm:left-auto sm:bottom-auto 
-                        w-full sm:w-[24rem] sm:max-w-md"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-in slide-in-from-bottom-5 fade-in duration-300 sm:slide-in-from-right-5">
-                        <div className="relative h-56 w-full bg-gray-100 group cursor-pointer" onClick={() => setIsMaximized(true)}>
-                            {selectedProperty.property_images && selectedProperty.property_images.length > 0 ? (
-                                <>
-                                    <Image
-                                        src={selectedProperty.property_images[currentImageIndex].image_url}
-                                        alt={selectedProperty.title}
-                                        fill
-                                        className="object-cover transition-opacity duration-300 group-hover:opacity-90"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                        <span className="bg-black/50 text-white px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm">View Photos</span>
-                                    </div>
-                                    {selectedProperty.property_images.length > 1 && (
-                                        <>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setCurrentImageIndex(prev => prev === 0 ? selectedProperty.property_images.length - 1 : prev - 1);
-                                                }}
-                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100 placeholder-button"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setCurrentImageIndex(prev => prev === selectedProperty.property_images.length - 1 ? 0 : prev + 1);
-                                                }}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100 placeholder-button"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                            </button>
-                                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                                                {selectedProperty.property_images.map((_, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-gray-400 bg-gray-50">
-                                    <span className="text-sm">No Images Available</span>
-                                </div>
-                            )}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedProperty(null);
-                                }}
-                                className="absolute top-3 right-3 bg-white/90 p-1.5 rounded-full text-gray-600 hover:text-black hover:bg-white shadow-sm transition-colors z-10"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                            <div className="absolute top-3 left-3 bg-green-600/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-white shadow-sm flex items-center">
-                                <span className={`w-2 h-2 rounded-full mr-2 ${selectedProperty.status === 'available' ? 'bg-green-300' : 'bg-red-400'}`}></span>
-                                {selectedProperty.status === 'available' ? 'Available' : selectedProperty.status}
-                            </div>
-                        </div>
-
-                        <div className="p-5 overflow-y-auto max-h-[60vh] sm:max-h-[calc(100vh-20rem)] scrollbar-hide">
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-xl text-gray-900 leading-tight">{selectedProperty.title}</h3>
-                                <div className="text-right">
-                                    <span className="block text-lg font-bold text-green-700">₱{selectedProperty.price}</span>
-
-                                </div>
-                            </div>
-
-                            <div className="flex items-center text-xs text-black mb-4 bg-gray-50 p-2 rounded-lg">
-                                <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-400 flex-shrink-0" />
-                                <span className="line-clamp-1">{selectedProperty.address}</span>
-                            </div>
-
-                            <p className="text-sm text-black mb-4 leading-relaxed">Description: <br /> {selectedProperty.description || 'No description available'}</p>
-
-                            <div className="grid grid-cols-2 gap-3 mb-6">
-                                <div className="bg-gray-50 p-2.5 rounded-xl text-center">
-                                    <span className="block text-xs text-gray-400 uppercase tracking-wider font-semibold">Slots</span>
-                                    <span className="block text-sm font-bold text-gray-800">{selectedProperty.available_slots}</span>
-                                </div>
-                                <div className="bg-gray-50 p-2.5 rounded-xl text-center">
-                                    <span className="block text-xs text-gray-400 uppercase tracking-wider font-semibold">Type</span>
-                                    <span className="block text-sm font-bold text-gray-800 capitalize">{selectedProperty.property_type}</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-green-50/50 rounded-xl p-4 border border-green-100">
-                                <div className="flex items-center gap-4">
-                                    <div className="relative h-14 w-14 rounded-full bg-white ring-2 ring-white shadow-md overflow-hidden flex-shrink-0">
-                                        {selectedProperty.profiles?.avatar_url ? (
-                                            <Image
-                                                src={selectedProperty.profiles.avatar_url}
-                                                alt={selectedProperty.profiles.full_name || "Owner"}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex h-full w-full items-center justify-center bg-green-100 text-green-700 font-bold text-lg">
-                                                {selectedProperty.profiles?.full_name?.charAt(0).toUpperCase() || "U"}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs text-green-600 font-bold uppercase tracking-wide mb-0.5">Property Owner</p>
-                                        <p className="text-lg font-bold text-gray-900 truncate max-w-[12rem]">
-                                            {selectedProperty.profiles?.full_name || "Unknown Owner"}
-                                        </p>
-                                        <div className="flex items-center text-sm text-gray-600 mt-0.5 bg-white/60 inline-flex px-2 py-0.5 rounded-md border border-green-100/50">
-                                            <Phone className="h-3.5 w-3.5 mr-2 text-green-600" />
-                                            <span className="font-medium font-mono">{selectedProperty.profiles?.phone_number || "No contact"}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Maximized Image Overlay */}
-            {selectedProperty && isMaximized && (
-                <div
-                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
-                    onClick={() => setIsMaximized(false)}
-                >
-                    <button
-                        onClick={() => setIsMaximized(false)}
-                        className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors"
-                    >
-                        <X className="h-6 w-6" />
-                    </button>
-
-                    {selectedProperty.property_images && selectedProperty.property_images.length > 0 && (
-                        <div className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                            <Image
-                                src={selectedProperty.property_images[currentImageIndex].image_url}
-                                alt={selectedProperty.title}
-                                fill
-                                className="object-contain"
-                                quality={100}
-                                priority
-                            />
-
-                            {selectedProperty.property_images.length > 1 && (
-                                <>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setCurrentImageIndex(prev => prev === 0 ? selectedProperty.property_images.length - 1 : prev - 1);
-                                        }}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-                                    >
-                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setCurrentImageIndex(prev => prev === selectedProperty.property_images.length - 1 ? 0 : prev + 1);
-                                        }}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-                                    >
-                                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                    </button>
-                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 bg-black/50 px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
-                                        {currentImageIndex + 1} / {selectedProperty.property_images.length}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-                </div>
+                <PropertyDesc
+                    property={selectedProperty}
+                    onClose={() => setSelectedProperty(null)}
+                    isMaximized={isMaximized}
+                    setIsMaximized={setIsMaximized}
+                    currentImageIndex={currentImageIndex}
+                    setCurrentImageIndex={setCurrentImageIndex}
+                    routeDistance={routeDistance}
+                />
             )}
         </div>
     );

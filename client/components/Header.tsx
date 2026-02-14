@@ -1,5 +1,13 @@
 import Image from 'next/image'
-import { LogOut, Building } from 'lucide-react'
+import { LogOut, Building, User } from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 import { AddPropertyModal } from './AddPropertyModal'
 
@@ -16,49 +24,83 @@ export default function Header({ user }: HeaderProps) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
                     <div className="flex items-center">
-                        <span className="text-2xl font-bold text-green-600">StayKo</span>
+                        {/* Desktop Logo */}
+                        <div className="hidden sm:block">
+                            <Image
+                                src="/StayKoLandscape.png"
+                                alt="StayKo Logo"
+                                width={150}
+                                height={40}
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
+                        {/* Mobile Logo */}
+                        <div className="sm:hidden">
+                            <Image
+                                src="/StayKoHouse.png"
+                                alt="StayKo Logo"
+                                width={40}
+                                height={40}
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
                     </div>
                     <div className="flex items-center space-x-4">
                         <AddPropertyModal />
 
-
                         <div className="h-8 w-px bg-gray-200 mx-2"></div>
 
-                        <a href="/dashboard/my-properties" className="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors p-2 sm:p-0 rounded-full hover:bg-gray-100 sm:hover:bg-transparent">
-                            <span className="hidden sm:inline">My Properties</span>
-                            <Building className="h-5 w-5 sm:hidden" />
-                        </a>
-
-                        <div className="h-8 w-px bg-gray-200 mx-2"></div>
-
-                        <div className="flex items-center space-x-3">
-                            <div className="relative h-10 w-10 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200 overflow-hidden">
-                                {user.avatar_url ? (
-                                    <Image
-                                        src={user.avatar_url}
-                                        alt={user.full_name || 'User'}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <span className="text-green-700 font-bold text-lg">
-                                        {user.full_name?.charAt(0) || 'U'}
-                                    </span>
-                                )}
-                            </div>
-                            <span className="font-medium text-gray-700 hidden sm:block">
-                                {user.full_name}
-                            </span>
-                        </div>
-                        <form action="/auth/signout" method="post">
-                            <button
-                                type="submit"
-                                className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                title="Sign out"
-                            >
-                                <LogOut className="h-5 w-5" />
-                            </button>
-                        </form>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger className="flex items-center space-x-3 cursor-pointer outline-none group">
+                                <div className="relative h-10 w-10 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200 overflow-hidden group-hover:border-green-400 transition-colors">
+                                    {user.avatar_url ? (
+                                        <Image
+                                            src={user.avatar_url}
+                                            alt={user.full_name || 'User'}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <span className="text-green-700 font-bold text-lg">
+                                            {user.full_name?.charAt(0) || 'U'}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="font-medium text-gray-700 hidden sm:block group-hover:text-green-700 transition-colors">
+                                    {user.full_name}
+                                </span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <a href="/dashboard/profile" className="w-full flex items-center gap-2 cursor-pointer">
+                                        <User className="h-4 w-4" />
+                                        <span>Profile</span>
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <a href="/dashboard/my-properties" className="w-full flex items-center gap-2 cursor-pointer">
+                                        <Building className="h-4 w-4" />
+                                        <span>My Properties</span>
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="p-0">
+                                    <form action="/auth/signout" method="post" className="w-full">
+                                        <button
+                                            type="submit"
+                                            className="w-full flex items-center gap-2 px-2 py-1.5 text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            <span>Logout</span>
+                                        </button>
+                                    </form>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
             </div>
