@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Map, MapMarker, MarkerContent, MapRoute, type MapRef } from "@/components/ui/map";
 import { getProperties } from "@/app/dashboard/property-actions";
 import Image from "next/image";
-import { X, Phone, MapPin, Search, Menu } from "lucide-react";
+import { X, Phone, MapPin, Search, Menu, Crosshair, Loader2 } from "lucide-react";
 import { PropertyDesc } from "./PropertyDesc";
 
 
@@ -67,6 +67,7 @@ export function StayKoMap() {
     const [routeDuration, setRouteDuration] = useState<string | null>(null);
     const [isRoutingLoading, setIsRoutingLoading] = useState(false);
     const [routedProperty, setRoutedProperty] = useState<Property | null>(null);
+    const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
 
 
     // Filter states
@@ -149,6 +150,31 @@ export function StayKoMap() {
 
         fetchRoute();
     }, [selectedProperty, userLocation, routedProperty]);
+
+    // Function to refresh user location
+    const refreshLocation = () => {
+        if ("geolocation" in navigator) {
+            setIsRefreshingLocation(true);
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { longitude, latitude } = position.coords;
+                    setUserLocation([longitude, latitude]);
+                    // Fly to new location
+                    mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 2000 });
+                    setIsRefreshingLocation(false);
+                },
+                (error) => {
+                    console.error("Error refreshing location:", error);
+                    setIsRefreshingLocation(false);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        }
+    };
 
     const handleClearRoute = () => {
         setRouteCoordinates([]);
@@ -413,6 +439,20 @@ export function StayKoMap() {
                     </SelectContent>
                 </Select>
             </div>
+
+            {/* Floating Location Refresh Button */}
+            <button
+                onClick={refreshLocation}
+                disabled={isRefreshingLocation}
+                className="absolute bottom-6 right-6 z-10 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 group"
+                title="Update my location"
+            >
+                {isRefreshingLocation ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                    <Crosshair className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
+                )}
+            </button>
 
             {/* Property Details Modal */}
             {selectedProperty && (

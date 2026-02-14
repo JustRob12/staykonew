@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 export async function updateProfile(formData: FormData) {
     const supabase = await createClient()
@@ -11,7 +11,7 @@ export async function updateProfile(formData: FormData) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-        return redirect('/login')
+        return { error: 'Not authenticated' }
     }
 
     const username = user.email ? user.email.split('@')[0] : `user_${user.id.substring(0, 8)}`
@@ -33,8 +33,9 @@ export async function updateProfile(formData: FormData) {
 
     if (error) {
         console.error('Error updating profile:', error)
-        return
+        return { error: error.message }
     }
 
-    return redirect('/dashboard')
+    revalidatePath('/dashboard')
+    return { success: true }
 }

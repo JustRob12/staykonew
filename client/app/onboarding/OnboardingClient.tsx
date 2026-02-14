@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { updateProfile } from './actions'
 import { Camera, ChevronRight, ChevronLeft, Check } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 interface OnboardingProps {
     user: {
@@ -17,9 +18,11 @@ interface OnboardingProps {
 }
 
 export default function OnboardingClient({ user }: OnboardingProps) {
+    const router = useRouter()
     const [step, setStep] = useState(1)
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState('')
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [formData, setFormData] = useState({
         full_name: user.user_metadata.full_name || '',
         phone_number: '',
@@ -32,6 +35,27 @@ export default function OnboardingClient({ user }: OnboardingProps) {
 
     const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
+    }
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+
+        const formDataToSubmit = new FormData()
+        formDataToSubmit.append('full_name', formData.full_name)
+        formDataToSubmit.append('phone_number', formData.phone_number)
+        formDataToSubmit.append('address', formData.address)
+        formDataToSubmit.append('avatar_url', formData.avatar_url)
+
+        const result = await updateProfile(formDataToSubmit)
+
+        if (result.success) {
+            // Use replace instead of push to prevent back button navigation
+            router.replace('/dashboard')
+        } else {
+            setIsSubmitting(false)
+            setUploadError(result.error || 'Failed to update profile')
+        }
     }
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
