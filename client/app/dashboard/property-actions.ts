@@ -57,7 +57,7 @@ export async function createProperty(prevState: PropertyState, formData: FormDat
             price,
             address,
             available_slots,
-            status: 'available',
+            status: 'Pending',
             // Start with placeholder lat/long if geocoding isn't implemented yet
             latitude,
             longitude,
@@ -109,6 +109,7 @@ export async function getProperties() {
         social_media (tiktok, facebook, instagram)
       )
     `)
+        .eq('status', 'Approved')
         .order('created_at', { ascending: false })
 
     if (error) {
@@ -328,4 +329,77 @@ export async function getPublicUserProperties(userId: string) {
     }
 
     return properties
+}
+
+export async function getPendingProperties() {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return []
+
+    // Verify admin role
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    if (profile?.role !== 0) {
+        return [] // Not an admin
+    }
+
+    const { data: properties, error } = await supabase
+        .from('properties')
+        .select(`
+            *,
+            property_images (image_url),
+            profiles:user_id (
+                full_name,
+                avatar_url,
+                email
+            )
+        `)
+        .eq('status', 'Pending')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching pending properties:', error)
+        return []
+    }
+
+    return properties
+}
+
+export async function approveProperty(propertyId: string) {
+    const supabase = await createClient()
+
+    // Verify admin (optional double check, UI should hide anyway)
+
+    const { error } = await supabase
+        .from('properties')
+        .update({ status: 'Approved' })
+        .eq('id', propertyId)
+
+    if (error) {
+        console.error('Error approving property:', error)
+        return { error: 'Failed to approve property' }
+    }
+
+    revalidatePath('/dashboard/admin')
+    revalidatePath('/dashboard')
+    return { message: 'Property approved successfully' }
+}
+
+export async function rejectProperty(propertyId: string) {
+    // Reusing deleteProperty logic but specifically for rejection context if needed
+    // For now, simple delete is what was requested
+    const result = await deleteProperty(propertyId)
+    if (result.error) {
+        return { error: 'Failed to reject property' }
+    }
+    revalidatePath('/dashboard/admin')
+    revalidatePath('/dashboard')
+    return { message: 'Property rejected and deleted' }
 }

@@ -215,15 +215,26 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
       resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
     currentStyleRef.current = initialStyle;
 
+    // Philippines bounds: [west, south, east, north]
+    // Tighter bounds to exclude neighboring countries like Malaysia/Brunei
+    const philippinesBounds: [number, number, number, number] = [
+      116.5, // West longitude (East of Balabac, cuts off Borneo/Brunei)
+      4.3,   // South latitude (South of Tawi-Tawi)
+      126.7, // East longitude (East of Mindanao)
+      21.2,  // North latitude (North of Batanes)
+    ];
+
     const map = new MapLibreGL.Map({
       container: containerRef.current,
       style: initialStyle,
       renderWorldCopies: false,
+      maxBounds: philippinesBounds,
       attributionControl: {
         compact: true,
       },
       ...props,
       ...viewport,
+      minZoom: 6, // Prevent zooming out to see other countries
     });
 
     const styleDataHandler = () => {

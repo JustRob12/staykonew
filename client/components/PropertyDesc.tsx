@@ -104,9 +104,9 @@ export function PropertyDesc({
                                 e.stopPropagation();
                                 onClose();
                             }}
-                            className="absolute top-3 right-3 bg-white/90 p-1.5 rounded-full text-gray-600 hover:text-black hover:bg-white shadow-sm transition-colors z-10"
+                            className="absolute top-3 right-3 bg-white p-2 rounded-full text-gray-900 shadow-md border border-gray-100 transition-transform active:scale-90 z-10"
                         >
-                            <X className="h-4 w-4" />
+                            <X className="h-5 w-5" />
                         </button>
                         <div className="absolute top-3 left-3 bg-green-600/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-white shadow-sm flex items-center">
                             <span className={`w-2 h-2 rounded-full mr-2 ${property.status === 'available' ? 'bg-green-300' : 'bg-red-400'}`}></span>
@@ -246,7 +246,7 @@ export function PropertyDesc({
             {
                 isMaximized && (
                     <div
-                        className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+                        className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4 animate-in fade-in duration-200"
                         onClick={() => setIsMaximized(false)}
                     >
                         <button

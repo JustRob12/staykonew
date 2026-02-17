@@ -14,13 +14,17 @@ import {
     DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 
-import { AddPropertyModal } from './AddPropertyModal'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
+// import { AddPropertyModal } from './AddPropertyModal'
 import { ConfirmDialog } from './ui/confirm-dialog'
 
 interface HeaderProps {
     user: {
         full_name: string | null
         avatar_url: string | null
+        role?: number
     }
 }
 
@@ -95,7 +99,12 @@ export default function Header({ user }: HeaderProps) {
                                 <span className="hidden sm:inline">Update Location</span>
                             </button>
 
-                            <AddPropertyModal />
+                            <Link href="/dashboard/add-property">
+                                <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm font-semibold rounded-xl px-3 sm:px-4">
+                                    <Plus className="h-5 w-5 sm:mr-2 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Add Property</span>
+                                </Button>
+                            </Link>
 
                             <div className="h-8 w-px bg-gray-200 mx-2"></div>
 
@@ -130,6 +139,17 @@ export default function Header({ user }: HeaderProps) {
                                         <Building className="h-4 w-4 mr-2" />
                                         <span>My Properties</span>
                                     </DropdownMenuItem>
+                                    {user.role === 0 && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => handleNavigation('/dashboard/admin')}>
+                                                <div className="flex items-center text-orange-600 font-medium">
+                                                    <Building className="h-4 w-4 mr-2" />
+                                                    <span>Admin Dashboard</span>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"

@@ -211,8 +211,8 @@ export function StayKoMap() {
         <div className="absolute inset-0 w-full h-full">
             <Map
                 ref={mapRef}
-                center={[-0.1276, 51.5074]}
-                zoom={14}
+                center={[121.6, 12.8]} // Philippines center (Updated for tight bounds)
+                zoom={6}
                 theme="light"
                 styles={
                     selectedStyle
