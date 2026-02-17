@@ -411,14 +411,13 @@ export function StayKoMap() {
                                                 <p className="text-xs text-gray-500 truncate mt-0.5">{property.address}</p>
                                                 <p className="text-xs font-bold text-green-600 mt-1">₱{property.price}</p>
 
-                                                <div className="flex gap-1 mt-1.5">
-                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${property.status === 'available'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-red-100 text-red-700'
-                                                        }`}>
-                                                        {property.status === 'available' ? 'Available' : 'Booked'}
-                                                    </span>
-                                                </div>
+                                                {property.status === 'available' && (
+                                                    <div className="flex gap-1 mt-1.5">
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-green-100 text-green-700">
+                                                            Available
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
 
 

@@ -50,7 +50,7 @@ export function PropertyDesc({
                         w-full sm:w-[24rem] sm:max-w-md"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-in slide-in-from-bottom-5 fade-in duration-300 sm:slide-in-from-right-5">
+                <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-in slide-in-from-bottom-5 fade-in duration-300 sm:slide-in-from-right-5 flex flex-col max-h-[85vh] sm:max-h-[calc(100vh-2rem)]">
                     <div className="relative h-64 w-full bg-gray-100 group cursor-pointer" onClick={() => setIsMaximized(true)}>
                         {property.property_images && property.property_images.length > 0 ? (
                             <>
@@ -104,17 +104,17 @@ export function PropertyDesc({
                                 e.stopPropagation();
                                 onClose();
                             }}
-                            className="absolute top-3 right-3 bg-white p-2 rounded-full text-gray-900 shadow-md border border-gray-100 transition-transform active:scale-90 z-10"
+                            className="absolute top-4 right-4 bg-white p-2 rounded-full text-gray-900 shadow-md border border-gray-100 transition-transform active:scale-90 z-50 hover:bg-gray-100"
                         >
                             <X className="h-5 w-5" />
                         </button>
-                        <div className="absolute top-3 left-3 bg-green-600/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-white shadow-sm flex items-center">
+                        <div className="absolute top-4 left-4 bg-green-600/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold text-white shadow-sm flex items-center z-50">
                             <span className={`w-2 h-2 rounded-full mr-2 ${property.status === 'available' ? 'bg-green-300' : 'bg-red-400'}`}></span>
                             {property.status === 'available' ? 'Available' : property.status}
                         </div>
                     </div>
 
-                    <div className="p-5 overflow-y-auto max-h-[60vh] sm:max-h-[calc(100vh-20rem)] scrollbar-hide text-black">
+                    <div className="p-5 overflow-y-auto scrollbar-hide text-black flex-1 min-h-0">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="font-bold text-xl text-gray-900 leading-tight">{property.title}</h3>
                             <div className="text-right">
@@ -249,13 +249,6 @@ export function PropertyDesc({
                         className="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4 animate-in fade-in duration-200"
                         onClick={() => setIsMaximized(false)}
                     >
-                        <button
-                            onClick={() => setIsMaximized(false)}
-                            className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors"
-                        >
-                            <X className="h-6 w-6" />
-                        </button>
-
                         {property.property_images && property.property_images.length > 0 && (
                             <div className="relative w-full h-full max-w-5xl max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                                 <Image
@@ -294,6 +287,17 @@ export function PropertyDesc({
                                 )}
                             </div>
                         )}
+
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsMaximized(false);
+                            }}
+                            className="absolute top-6 right-6 sm:top-4 sm:right-4 text-white bg-black/50 hover:bg-black/70 p-3 rounded-full transition-colors z-[101] backdrop-blur-sm border border-white/20 active:scale-95"
+                            aria-label="Close full screen view"
+                        >
+                            <X className="h-6 w-6" />
+                        </button>
                     </div>
                 )
             }
