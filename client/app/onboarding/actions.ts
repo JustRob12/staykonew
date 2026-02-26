@@ -24,6 +24,7 @@ export async function updateProfile(formData: FormData) {
         address: formData.get('address') as string,
         phone_number: formData.get('phone_number') as string,
         avatar_url: (formData.get('avatar_url') as string) || null,
+        role: 1, // 0 = admin, 1 = regular user
         updated_at: new Date().toISOString(),
     }
 

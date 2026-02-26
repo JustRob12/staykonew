@@ -68,6 +68,7 @@ export function StayKoMap() {
     const [isRoutingLoading, setIsRoutingLoading] = useState(false);
     const [routedProperty, setRoutedProperty] = useState<Property | null>(null);
     const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
+    const [isLoadingProperties, setIsLoadingProperties] = useState(true);
 
 
     // Filter states
@@ -110,10 +111,12 @@ export function StayKoMap() {
     // Fetch properties
     useEffect(() => {
         const fetchProperties = async () => {
+            setIsLoadingProperties(true);
             const data = await getProperties();
             if (data) {
                 setProperties(data as any);
             }
+            setIsLoadingProperties(false);
         };
         fetchProperties();
     }, []);
@@ -172,8 +175,14 @@ export function StayKoMap() {
                     mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 2000 });
                     setIsRefreshingLocation(false);
                 },
-                (error) => {
-                    console.error("Error refreshing location:", error);
+                (error: GeolocationPositionError) => {
+                    // GeolocationPositionError properties are non-enumerable, so console.error({}) looks empty
+                    const messages: Record<number, string> = {
+                        1: 'Location permission denied. Please allow location access.',
+                        2: 'Location unavailable. Check your device settings.',
+                        3: 'Location request timed out. Try again.',
+                    };
+                    console.warn('Geolocation error:', error.code, error.message || messages[error.code]);
                     setIsRefreshingLocation(false);
                 },
                 {
@@ -262,47 +271,45 @@ export function StayKoMap() {
                     )
                 ))}
 
-                {/* Road following route */}
-                {routeCoordinates.length > 0 && (
-                    <>
-                        <MapRoute
-                            coordinates={routeCoordinates}
-                            color="#22c55e" // Green
-                            width={4}
-                            opacity={0.8}
-                        />
-                        {/* Floating Time/Distance Badge at destination */}
-                        {routedProperty && routedProperty.latitude && routedProperty.longitude && (
-                            <MapMarker
-                                longitude={routedProperty.longitude}
-                                latitude={routedProperty.latitude}
-                                anchor="bottom"
-                                offset={[0, -50]} // Move above the pin
-                            >
-                                <MarkerContent>
-                                    <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-green-100 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-green-700 leading-tight">
-                                                {routeDistance}
-                                            </span>
-                                            <span className="text-[10px] font-medium text-gray-500 leading-tight">
-                                                {routeDuration}
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleClearRoute();
-                                            }}
-                                            className="ml-1 p-0.5 hover:bg-gray-100 rounded-full transition-colors"
-                                        >
-                                            <X className="h-3 w-3 text-gray-400" />
-                                        </button>
-                                    </div>
-                                </MarkerContent>
-                            </MapMarker>
-                        )}
-                    </>
+                {/* Road following route — always mounted so layer ids stay stable */}
+                <MapRoute
+                    id="main-route"
+                    coordinates={routeCoordinates}
+                    color="#22c55e"
+                    width={4}
+                    opacity={0.8}
+                />
+
+                {/* Floating Time/Distance Badge — only when there's an active route */}
+                {routeCoordinates.length > 0 && routedProperty && routedProperty.latitude && routedProperty.longitude && (
+                    <MapMarker
+                        longitude={routedProperty.longitude}
+                        latitude={routedProperty.latitude}
+                        anchor="bottom"
+                        offset={[0, -50]}
+                    >
+                        <MarkerContent>
+                            <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-green-100 flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-green-700 leading-tight">
+                                        {routeDistance}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-gray-500 leading-tight">
+                                        {routeDuration}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleClearRoute();
+                                    }}
+                                    className="ml-1 p-0.5 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <X className="h-3 w-3 text-gray-400" />
+                                </button>
+                            </div>
+                        </MarkerContent>
+                    </MapMarker>
                 )}
             </Map>
 
@@ -374,16 +381,28 @@ export function StayKoMap() {
                         {/* Search Results List (Google Maps Style) */}
                         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col min-h-0 flex-1 transition-all duration-300 ease-in-out animate-in slide-in-from-left-5 duration-200 delay-75">
                             <div className="overflow-y-auto p-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-200 flex-1">
-                                {filteredProperties.length > 0 ? (
+                                {isLoadingProperties ? (
+                                    /* Skeleton cards while fetching */
+                                    Array.from({ length: 4 }).map((_, i) => (
+                                        <div key={i} className="flex gap-3 p-2 rounded-xl border-b border-gray-50 last:border-0 animate-pulse">
+                                            {/* Image skeleton */}
+                                            <div className="w-24 h-24 flex-shrink-0 rounded-lg bg-gray-200" />
+                                            {/* Text skeletons */}
+                                            <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
+                                                <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+                                                <div className="h-2.5 bg-gray-100 rounded w-1/2" />
+                                                <div className="h-2.5 bg-gray-100 rounded w-5/6" />
+                                                <div className="h-3 bg-gray-200 rounded w-1/3" />
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : filteredProperties.length > 0 ? (
                                     filteredProperties.map(property => (
-
-
                                         <div
                                             key={property.id}
                                             onClick={() => {
                                                 setSelectedProperty(property);
                                                 mapRef.current?.flyTo({ center: [property.longitude!, property.latitude!], zoom: 16, duration: 1500 });
-                                                // Optional: Close sidebar on mobile when selecting? keeping open for now
                                             }}
                                             className="flex gap-3 p-2 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors border-b border-gray-50 last:border-0"
                                         >
@@ -404,13 +423,10 @@ export function StayKoMap() {
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                 <h4 className="font-bold text-sm text-gray-900 truncate">{property.title}</h4>
                                                 <div className="flex items-center gap-1 mt-0.5">
-
-
                                                     <span className="text-xs text-gray-500 truncate">{property.property_type}</span>
                                                 </div>
                                                 <p className="text-xs text-gray-500 truncate mt-0.5">{property.address}</p>
                                                 <p className="text-xs font-bold text-green-600 mt-1">₱{property.price}</p>
-
                                                 {property.status === 'available' && (
                                                     <div className="flex gap-1 mt-1.5">
                                                         <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-green-100 text-green-700">
@@ -419,8 +435,6 @@ export function StayKoMap() {
                                                     </div>
                                                 )}
                                             </div>
-
-
                                         </div>
                                     ))
                                 ) : (

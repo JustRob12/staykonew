@@ -403,3 +403,98 @@ export async function rejectProperty(propertyId: string) {
     revalidatePath('/dashboard')
     return { message: 'Property rejected and deleted' }
 }
+
+export async function toggleFavorite(propertyId: string) {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Unauthorized' }
+
+    // Check if valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(propertyId)) return { error: 'Invalid ID' }
+
+    // Check if already favorited
+    const { data: existing } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('property_id', propertyId)
+        .single()
+
+    if (existing) {
+        // Remove favorite
+        const { error } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('id', existing.id)
+
+        if (error) return { error: 'Failed to remove favorite' }
+        revalidatePath('/dashboard/favorites')
+        return { message: 'Removed from favorites', isFavorite: false }
+    } else {
+        // Add favorite
+        const { error } = await supabase
+            .from('favorites')
+            .insert({ user_id: user.id, property_id: propertyId })
+
+        if (error) return { error: 'Failed to add favorite' }
+        revalidatePath('/dashboard/favorites')
+        return { message: 'Added to favorites', isFavorite: true }
+    }
+}
+
+export async function getFavorites() {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return []
+
+    const { data: favorites, error } = await supabase
+        .from('favorites')
+        .select(`
+            property_id,
+            properties (
+                *,
+                property_images (image_url),
+                profiles:user_id (
+                    full_name,
+                    avatar_url,
+                    phone_number
+                )
+            )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching favorites:', error)
+        return []
+    }
+
+    // Transform structure to match Property[] type if needed, 
+    // or just return the properties array
+    return favorites.map(f => f.properties).filter(Boolean)
+}
+
+export async function checkFavoriteStatus(propertyId: string) {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return false
+
+    const { data } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('property_id', propertyId)
+        .single()
+
+    return !!data
+}

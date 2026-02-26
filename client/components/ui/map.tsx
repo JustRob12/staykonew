@@ -1111,18 +1111,22 @@ function MapRoute({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, map]);
 
-  // When coordinates change, update the source data
+  // When coordinates change, update the source data (or clear it)
   useEffect(() => {
-    if (!isLoaded || !map || coordinates.length < 2) return;
+    if (!isLoaded || !map) return;
 
     const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
-    if (source) {
-      source.setData({
-        type: "Feature",
-        properties: {},
-        geometry: { type: "LineString", coordinates },
-      });
-    }
+    if (!source) return;
+
+    // If fewer than 2 points, clear the line
+    source.setData({
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "LineString",
+        coordinates: coordinates.length >= 2 ? coordinates : [],
+      },
+    });
   }, [isLoaded, map, coordinates, sourceId]);
 
   useEffect(() => {
