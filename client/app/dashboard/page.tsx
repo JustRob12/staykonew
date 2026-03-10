@@ -10,18 +10,20 @@ export default async function DashboardPage() {
         data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) {
-        return redirect('/login')
-    }
+    let profile = null;
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*, role')
-        .eq('id', user.id)
-        .single()
+    if (user) {
+        const { data } = await supabase
+            .from('profiles')
+            .select('*, role')
+            .eq('id', user.id)
+            .single()
 
-    if (!profile || !profile.username) {
-        return redirect('/onboarding')
+        profile = data;
+
+        if (!profile || !profile.username) {
+            return redirect('/onboarding')
+        }
     }
 
     return (

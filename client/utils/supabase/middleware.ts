@@ -68,11 +68,26 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
+    // Protected dashboard sub-routes that require login
+    const protectedDashboardPaths = [
+        '/dashboard/add-property',
+        '/dashboard/profile',
+        '/dashboard/favorites',
+        '/dashboard/my-properties',
+        '/dashboard/admin',
+    ]
+
+    const isProtectedDashboardRoute = protectedDashboardPaths.some(
+        path => request.nextUrl.pathname.startsWith(path)
+    )
+
     if (
         !user &&
         request.nextUrl.pathname !== '/' &&
         !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth')
+        !request.nextUrl.pathname.startsWith('/auth') &&
+        !request.nextUrl.pathname.startsWith('/dashboard') ||
+        (!user && isProtectedDashboardRoute)
     ) {
         // no user, potentially respond by redirecting the user to the login page
         const url = request.nextUrl.clone()

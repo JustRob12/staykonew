@@ -8,6 +8,7 @@ import { type Property } from "./StayKoMap";
 import { toggleFavorite, checkFavoriteStatus } from "@/app/dashboard/property-actions";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useRouter } from "next/navigation";
 
 interface PropertyDescProps {
     property: Property;
@@ -34,6 +35,7 @@ export function PropertyDesc({
     const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isCheckingFavorite, setIsCheckingFavorite] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         let isMounted = true;
@@ -83,6 +85,9 @@ export function PropertyDesc({
             if (result.error) {
                 setIsFavorite(previousState);
                 console.error("Failed to toggle favorite:", result.error);
+                if (result.error === 'Unauthorized') {
+                    router.push('/login');
+                }
             }
         } catch (error) {
             console.error("Unexpected error toggling favorite:", error);
