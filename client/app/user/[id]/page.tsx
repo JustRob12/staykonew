@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getPublicProfile } from '@/app/dashboard/profile-actions'
-import { getPublicUserProperties } from '@/app/dashboard/property-actions'
+import { getPublicProfile } from '@/app/profile-actions'
+import { getPublicUserProperties } from '@/app/property-actions'
 import { Property } from '@/components/StayKoMap'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Phone, MapPin, Facebook, Instagram, Music2, Check, Copy, ArrowLeft } from 'lucide-react'
@@ -69,7 +69,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             <div className="container mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh]">
                 <h1 className="text-2xl font-bold text-gray-800 mb-4">User Not Found</h1>
                 <p className="text-gray-500 mb-6">The user profile you are looking for does not exist.</p>
-                <Link href="/dashboard" className="text-green-600 hover:underline flex items-center">
+                <Link href="/" className="text-green-600 hover:underline flex items-center">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Dashboard
                 </Link>
@@ -146,7 +146,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             {/* Header / Cover */}
             <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
                 <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                    <Link href="/dashboard" className="text-gray-500 hover:text-green-600 transition-colors flex items-center text-sm font-medium">
+                    <Link href="/" className="text-gray-500 hover:text-green-600 transition-colors flex items-center text-sm font-medium">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back to Map
                     </Link>

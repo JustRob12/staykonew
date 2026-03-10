@@ -53,7 +53,7 @@ export async function updateSession(request: NextRequest) {
             request.nextUrl.pathname.startsWith('/onboarding')
         ) {
             const url = request.nextUrl.clone()
-            url.pathname = '/dashboard'
+            url.pathname = '/'
             return NextResponse.redirect(url)
         }
     }
@@ -61,33 +61,39 @@ export async function updateSession(request: NextRequest) {
     // Redirect authenticated users without completed profiles to onboarding
     if (user && !hasCompletedProfile && (
         request.nextUrl.pathname.startsWith('/login') ||
-        request.nextUrl.pathname.startsWith('/dashboard')
+        request.nextUrl.pathname === '/' ||
+        request.nextUrl.pathname.startsWith('/user/') ||
+        request.nextUrl.pathname.startsWith('/profile') ||
+        request.nextUrl.pathname.startsWith('/add-property') ||
+        request.nextUrl.pathname.startsWith('/my-properties') ||
+        request.nextUrl.pathname.startsWith('/favorites') ||
+        request.nextUrl.pathname.startsWith('/admin')
     )) {
         const url = request.nextUrl.clone()
         url.pathname = '/onboarding'
         return NextResponse.redirect(url)
     }
 
-    // Protected dashboard sub-routes that require login
-    const protectedDashboardPaths = [
-        '/dashboard/add-property',
-        '/dashboard/profile',
-        '/dashboard/favorites',
-        '/dashboard/my-properties',
-        '/dashboard/admin',
+    // Protected routes that require login
+    const protectedPaths = [
+        '/add-property',
+        '/profile',
+        '/favorites',
+        '/my-properties',
+        '/admin',
     ]
 
-    const isProtectedDashboardRoute = protectedDashboardPaths.some(
+    const isProtectedRoute = protectedPaths.some(
         path => request.nextUrl.pathname.startsWith(path)
     )
 
     if (
         !user &&
         request.nextUrl.pathname !== '/' &&
+        !request.nextUrl.pathname.startsWith('/user/') &&
         !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth') &&
-        !request.nextUrl.pathname.startsWith('/dashboard') ||
-        (!user && isProtectedDashboardRoute)
+        !request.nextUrl.pathname.startsWith('/auth') ||
+        (!user && isProtectedRoute)
     ) {
         // no user, potentially respond by redirecting the user to the login page
         const url = request.nextUrl.clone()

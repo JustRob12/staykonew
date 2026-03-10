@@ -9,7 +9,7 @@ export default function MyPropertiesPage() {
             <div className="container mx-auto py-8 px-4 max-w-7xl">
                 <div className="flex justify-between items-center mb-8">
                     <div className="flex items-center gap-4">
-                        <Link href="/dashboard" className="group p-2.5 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-all duration-200">
+                        <Link href="/" className="group p-2.5 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-all duration-200">
                             <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
                         </Link>
                         <div>

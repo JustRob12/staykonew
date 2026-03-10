@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Map, MapMarker, MarkerContent, MapRoute, type MapRef } from "@/components/ui/map";
-import { getProperties } from "@/app/dashboard/property-actions";
+import { getProperties } from "@/app/property-actions";
 import Image from "next/image";
 import { X, Phone, MapPin, Search, Menu, Crosshair, Loader2 } from "lucide-react";
 import { PropertyDesc } from "./PropertyDesc";

@@ -21,7 +21,7 @@ export default async function OnboardingPage() {
         .single()
 
     if (profile && profile.username) {
-        return redirect('/dashboard')
+        return redirect('/')
     }
 
     // Transform User object to a serializable version for the Client Component

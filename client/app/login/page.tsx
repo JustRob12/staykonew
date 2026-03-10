@@ -220,7 +220,7 @@ export default function LoginPage() {
 
                                     <section>
                                         <h3 className="font-bold text-gray-800 mb-1">5. Your Rights</h3>
-                                        <p>You have the right to access, correct, or delete your personal data. To exercise any of these rights, please contact us at <span className="text-green-700 font-medium">privacy@stayko.app</span>.</p>
+                                        <p>You have the right to access, correct, or delete your personal data. To exercise any of these rights, please contact us at <span className="text-green-700 font-medium">roberto.prisoris@gmail.com</span>.</p>
                                     </section>
 
                                     <section>

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { X, Phone, MapPin, Copy, Check, Facebook, Instagram, Music2, Heart } from "lucide-react";
 import { type Property } from "./StayKoMap";
-import { toggleFavorite, checkFavoriteStatus } from "@/app/dashboard/property-actions";
+import { toggleFavorite, checkFavoriteStatus } from "@/app/property-actions";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useRouter } from "next/navigation";
@@ -265,7 +265,7 @@ export function PropertyDesc({
                                 </div>
 
                                 <div className="bg-green-50/50 rounded-xl p-4 border border-green-100">
-                                    <Link href={`/dashboard/user/${property.user_id}`} className="flex items-center gap-4 group/owner cursor-pointer transition-all hover:bg-green-100/50 p-2 -m-2 rounded-xl">
+                                    <Link href={`/user/${property.user_id}`} className="flex items-center gap-4 group/owner cursor-pointer transition-all hover:bg-green-100/50 p-2 -m-2 rounded-xl">
                                         <div className="relative h-14 w-14 rounded-full bg-white ring-2 ring-white shadow-md overflow-hidden flex-shrink-0 group-hover/owner:ring-green-200 transition-all">
                                             {property.profiles?.avatar_url ? (
                                                 <Image

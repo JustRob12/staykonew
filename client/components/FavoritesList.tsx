@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getFavorites, toggleFavorite } from '@/app/dashboard/property-actions'
+import { getFavorites, toggleFavorite } from '@/app/property-actions'
 import { Property } from './StayKoMap'
 import { Button } from '@/components/ui/button'
 import { MapPin, Loader2, Home, Heart, User } from 'lucide-react'
@@ -74,7 +74,7 @@ export function FavoritesList() {
                 </div>
                 <Button
                     className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl px-6 mt-2"
-                    onClick={() => router.push('/dashboard')}
+                    onClick={() => router.push('/')}
                 >
                     Browse Properties
                 </Button>
@@ -155,7 +155,7 @@ export function FavoritesList() {
                             {/* Owner Section */}
                             <div className="mt-auto pt-3 border-t border-gray-50">
                                 <Link
-                                    href={`/dashboard/user/${property.user_id}`}
+                                    href={`/user/${property.user_id}`}
                                     className="flex items-center gap-2.5 hover:bg-gray-50 p-1.5 -mx-1.5 rounded-xl transition-colors group/owner"
                                     onClick={(e) => e.stopPropagation()}
                                 >

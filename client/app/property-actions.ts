@@ -90,7 +90,7 @@ export async function createProperty(prevState: PropertyState, formData: FormDat
         }
     }
 
-    revalidatePath('/dashboard')
+    revalidatePath('/')
     return { message: 'Property created successfully!' }
 }
 
@@ -185,7 +185,7 @@ export async function deleteProperty(propertyId: string) {
         return { error: 'Failed to delete property' }
     }
 
-    revalidatePath('/dashboard')
+    revalidatePath('/')
     return { message: 'Property deleted successfully' }
 }
 
@@ -210,7 +210,7 @@ export async function togglePropertyStatus(propertyId: string, currentStatus: st
         return { error: 'Failed to update status' }
     }
 
-    revalidatePath('/dashboard')
+    revalidatePath('/')
     return { message: 'Status updated', newStatus }
 }
 
@@ -295,7 +295,7 @@ export async function updateProperty(prevState: PropertyState, formData: FormDat
         await supabase.from('property_images').delete().eq('property_id', propertyId)
     }
 
-    revalidatePath('/dashboard')
+    revalidatePath('/')
     return { message: 'Property updated successfully!' }
 }
 
@@ -387,8 +387,8 @@ export async function approveProperty(propertyId: string) {
         return { error: 'Failed to approve property' }
     }
 
-    revalidatePath('/dashboard/admin')
-    revalidatePath('/dashboard')
+    revalidatePath('/admin')
+    revalidatePath('/')
     return { message: 'Property approved successfully' }
 }
 
@@ -399,8 +399,8 @@ export async function rejectProperty(propertyId: string) {
     if (result.error) {
         return { error: 'Failed to reject property' }
     }
-    revalidatePath('/dashboard/admin')
-    revalidatePath('/dashboard')
+    revalidatePath('/admin')
+    revalidatePath('/')
     return { message: 'Property rejected and deleted' }
 }
 
@@ -432,7 +432,7 @@ export async function toggleFavorite(propertyId: string) {
             .eq('id', existing.id)
 
         if (error) return { error: 'Failed to remove favorite' }
-        revalidatePath('/dashboard/favorites')
+        revalidatePath('/favorites')
         return { message: 'Removed from favorites', isFavorite: false }
     } else {
         // Add favorite
@@ -441,7 +441,7 @@ export async function toggleFavorite(propertyId: string) {
             .insert({ user_id: user.id, property_id: propertyId })
 
         if (error) return { error: 'Failed to add favorite' }
-        revalidatePath('/dashboard/favorites')
+        revalidatePath('/favorites')
         return { message: 'Added to favorites', isFavorite: true }
     }
 }

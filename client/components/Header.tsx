@@ -67,7 +67,7 @@ export default function Header({ user }: HeaderProps) {
                         <div className="flex items-center">
                             {/* Desktop Logo */}
                             <div className="hidden sm:block">
-                                <Link href="/dashboard">
+                                <Link href="/">
                                     <Image
                                         src="/StayKoLandscape.png"
                                         alt="StayKo Logo"
@@ -80,7 +80,7 @@ export default function Header({ user }: HeaderProps) {
                             </div>
                             {/* Mobile Logo */}
                             <div className="sm:hidden">
-                                <Link href="/dashboard">
+                                <Link href="/">
                                     <Image
                                         src="/StayKoHouse.png"
                                         alt="StayKo Logo"
@@ -108,7 +108,7 @@ export default function Header({ user }: HeaderProps) {
                                 <span className="hidden sm:inline">Update Location</span>
                             </button>
 
-                            <Link href={user ? "/dashboard/add-property" : "/login"}>
+                            <Link href={user ? "/add-property" : "/login"}>
                                 <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm font-semibold rounded-xl px-3 sm:px-4">
                                     <Plus className="h-5 w-5 sm:mr-2 sm:h-4 sm:w-4" />
                                     <span className="hidden sm:inline">Add Property</span>
@@ -142,22 +142,22 @@ export default function Header({ user }: HeaderProps) {
                                         <DropdownMenuContent align="end" className="w-48">
                                             <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => handleNavigation('/dashboard/profile')}>
+                                            <DropdownMenuItem onClick={() => handleNavigation('/profile')}>
                                                 <User className="h-4 w-4 mr-2" />
                                                 <span>Profile</span>
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleNavigation('/dashboard/my-properties')}>
+                                            <DropdownMenuItem onClick={() => handleNavigation('/my-properties')}>
                                                 <Building className="h-4 w-4 mr-2" />
                                                 <span>My Properties</span>
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleNavigation('/dashboard/favorites')}>
+                                            <DropdownMenuItem onClick={() => handleNavigation('/favorites')}>
                                                 <Heart className="h-4 w-4 mr-2" />
                                                 <span>My Favorites</span>
                                             </DropdownMenuItem>
                                             {user.role === 0 && (
                                                 <>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => handleNavigation('/dashboard/admin')}>
+                                                    <DropdownMenuItem onClick={() => handleNavigation('/admin')}>
                                                         <div className="flex items-center text-orange-600 font-medium">
                                                             <Building className="h-4 w-4 mr-2" />
                                                             <span>Admin Dashboard</span>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { createProperty, updateProperty } from '@/app/dashboard/property-actions'
+import { createProperty, updateProperty } from '@/app/property-actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -781,7 +781,7 @@ export function PropertyForm({ property, onSuccess, onCancel }: PropertyFormProp
                         </p>
                         <Button
                             className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-6"
-                            onClick={() => window.location.href = '/dashboard'}
+                            onClick={() => window.location.href = '/'}
                         >
                             Return to Dashboard
                         </Button>

@@ -10,7 +10,7 @@ export default function AddPropertyPage() {
     const router = useRouter()
 
     const handleSuccess = () => {
-        router.push('/dashboard')
+        router.push('/')
         router.refresh() // Refresh to show new property
     }
 
@@ -22,7 +22,7 @@ export default function AddPropertyPage() {
         <div className="max-w-4xl mx-auto p-6 pb-20">
             <div className="mb-6 flex items-center gap-4">
                 <Button variant="ghost" size="icon" asChild className="rounded-full hover:bg-gray-100">
-                    <Link href="/dashboard">
+                    <Link href="/">
                         <ArrowLeft className="h-5 w-5" />
                     </Link>
                 </Button>

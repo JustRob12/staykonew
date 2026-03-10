@@ -2,6 +2,8 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 export type SocialMedia = {
     tiktok: string | null
@@ -100,8 +102,8 @@ export async function updateUserProfile(formData: FormData) {
         return { error: 'Failed to update social media links' }
     }
 
-    revalidatePath('/dashboard/profile')
-    revalidatePath('/dashboard') // Revalidate map/header
+    revalidatePath('/profile')
+    revalidatePath('/') // Revalidate map/header
     return { message: 'Profile updated successfully!' }
 }
 
@@ -149,4 +151,32 @@ export async function getUsers() {
     }
 
     return profiles
+}
+
+export async function deleteAccount() {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const userId = user.id
+
+    // Sign out the current session first
+    await supabase.auth.signOut()
+
+    // Use service-role admin client to permanently delete the auth user
+    // (Supabase cascade deletes will remove profiles, properties, etc.)
+    const adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { error } = await adminSupabase.auth.admin.deleteUser(userId)
+
+    if (error) {
+        console.error('Error deleting account:', error)
+        return { error: 'Failed to delete account. Please try again.' }
+    }
+
+    redirect('/')
 }

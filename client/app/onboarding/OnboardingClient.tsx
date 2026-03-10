@@ -51,7 +51,7 @@ export default function OnboardingClient({ user }: OnboardingProps) {
 
         if (result.success) {
             // Use replace instead of push to prevent back button navigation
-            router.replace('/dashboard')
+            router.replace('/')
         } else {
             setIsSubmitting(false)
             setUploadError(result.error || 'Failed to update profile')

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getPendingProperties, approveProperty, rejectProperty } from '@/app/dashboard/property-actions'
+import { getPendingProperties, approveProperty, rejectProperty } from '@/app/property-actions'
 import { Button } from '@/components/ui/button'
 import { Check, X, MapPin, Home, Loader2, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
         <div className="min-h-screen bg-gray-50/50">
             <div className="container mx-auto py-8 px-4 max-w-7xl">
                 <div className="flex items-center gap-4 mb-8">
-                    <Link href="/dashboard" className="group p-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all duration-200 shadow-sm">
+                    <Link href="/" className="group p-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all duration-200 shadow-sm">
                         <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
                     </Link>
                     <div>

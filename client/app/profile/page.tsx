@@ -30,7 +30,7 @@ export default async function ProfilePage() {
                 </div>
 
                 <a
-                    href="/dashboard"
+                    href="/"
                     className="inline-flex items-center justify-center gap-2 bg-white px-6 py-3 rounded-2xl text-sm font-bold text-gray-700 shadow-sm border border-gray-100 hover:bg-gray-50 hover:shadow-md transition-all active:scale-[0.98]"
                 >
                     <ChevronLeft className="h-4 w-4" />

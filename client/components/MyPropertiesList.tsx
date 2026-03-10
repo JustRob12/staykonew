@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getUserProperties, deleteProperty, togglePropertyStatus } from '@/app/dashboard/property-actions'
+import { getUserProperties, deleteProperty, togglePropertyStatus } from '@/app/property-actions'
 import { Property, AddPropertyModal } from './AddPropertyModal'
 import { Button } from '@/components/ui/button'
 import { Pencil, Trash2, MapPin, Loader2, Home, Clock } from 'lucide-react'
