@@ -50,6 +50,21 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
+const getPinColors = (propertyType: string) => {
+    switch (propertyType?.toLowerCase()) {
+        case "house for rent":
+            return { text: "text-blue-600", fill: "fill-blue-600", bg: "bg-blue-600" };
+        case "lot for sale":
+            return { text: "text-green-600", fill: "fill-green-600", bg: "bg-green-600" };
+        case "boarding house":
+            return { text: "text-purple-600", fill: "fill-purple-600", bg: "bg-purple-600" };
+        case "house and lot for sale":
+            return { text: "text-orange-600", fill: "fill-orange-600", bg: "bg-orange-600" };
+        default:
+            return { text: "text-red-600", fill: "fill-red-600", bg: "bg-red-600" };
+    }
+};
+
 export function StayKoMap() {
     const mapRef = useRef<MapRef>(null);
     const [style, setStyle] = useState<StyleKey>("default");
@@ -257,9 +272,9 @@ export function StayKoMap() {
                             <MarkerContent>
                                 <div className="group cursor-pointer transform transition-transform hover:scale-110">
                                     <div className="relative -mt-10 -ml-5">
-                                        <MapPin className="h-10 w-10 text-red-600 fill-red-600 drop-shadow-xl" strokeWidth={1.5} />
+                                        <MapPin className={`h-10 w-10 ${getPinColors(property.property_type).text} ${getPinColors(property.property_type).fill} drop-shadow-xl`} strokeWidth={1.5} />
                                         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <div className="w-2 h-2 rounded-full bg-red-600"></div>
+                                            <div className={`w-2 h-2 rounded-full ${getPinColors(property.property_type).bg}`}></div>
                                         </div>
                                     </div>
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white px-2 py-1 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
